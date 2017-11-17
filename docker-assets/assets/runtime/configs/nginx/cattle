@@ -1,0 +1,52 @@
+## cattle
+##
+## Based on https://github.com/sameersbn/docker-gitlab
+## Normal HTTP host
+
+server {
+  ## Either remove "default_server" from the listen line below,
+  ## or delete the /etc/nginx/sites-enabled/default file. This will cause gitlab
+  ## to be served if you visit any address that your server responds to, eg.
+  ## the ip address of the server (http://x.x.x.x/)n 0.0.0.0:80 default_server;
+  listen 0.0.0.0:80 default_server;
+  listen [::]:80 default_server;
+  server_name {{CATTLE_HOST}} *.{{CATTLE_HOST}}; ## Replace this with something like gitlab.example.com
+  server_tokens off; ## Don't show the nginx version number, a security best practice
+
+  ## See app/controllers/application_controller.rb for headers set
+  add_header X-Accel-Buffering {{NGINX_ACCEL_BUFFERING}};
+  add_header Strict-Transport-Security "max-age={{NGINX_HSTS_MAXAGE}};";
+
+  ## Individual nginx logs for this cattle vhost, with custom log format inc cache info
+  log_format log_cache [$time_local] $remote_addr " - " '"$request"' " - " $upstream_cache_status " " $request_time " - "  $status " " $body_bytes_sent ' "$http_referer" "$http_user_agent"';
+  access_log  {{CATTLE_LOG_DIR}}/nginx/cattle_access.log log_cache;
+  error_log   {{CATTLE_LOG_DIR}}/nginx/cattle_error.log error;
+
+  location / {
+    proxy_pass http://127.0.0.1:8088/;
+    proxy_set_header Host $host;
+    proxy_pass_header Server;
+    client_max_body_size 0;
+    gzip off;
+
+    ## https://github.com/gitlabhq/gitlabhq/issues/694
+    ## Some requests take more than 30 seconds.
+    proxy_read_timeout      600;
+    proxy_connect_timeout   600;
+    proxy_send_timeout      600;
+    send_timeout            600;
+    proxy_redirect          off;
+    proxy_buffering         {{NGINX_PROXY_BUFFERING}};
+
+    proxy_http_version 1.1;
+
+    proxy_set_header    Host                $http_host;
+    proxy_set_header    X-Real-IP           $remote_addr;
+    proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
+    proxy_set_header    X-Forwarded-Proto   {{NGINX_X_FORWARDED_PROTO}};
+
+    add_header Access-Control-Allow-Origin *;
+
+  }
+
+}

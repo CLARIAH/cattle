@@ -15,7 +15,7 @@ from rdflib import ConjunctiveGraph
 app = Flask(__name__)
 
 # Uploading
-UPLOAD_FOLDER = '/home/amp/src/cattle/uploads/'
+UPLOAD_FOLDER = '/tmp'
 ALLOWED_EXTENSIONS = set(['csv', 'json'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
