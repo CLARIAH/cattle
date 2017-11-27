@@ -1,15 +1,19 @@
 # cattle
 
-`curl -i -F "csv=@/home/amp/src/cattle/data/imf.csv" http://localhost:8001/build`
+[cattle](http://cattle.datalegend.net/) is a [COW](https://github.com/CLARIAH/COW) Web service
 
-`curl -F "csv=@/home/amp/src/cattle/data/imf.csv" http://localhost:8001/build > imf.csv-metadata.json`
+## Example 
 
-`curl -i -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://localhost:8001/convert`
+`curl -i -F "csv=@/home/amp/src/cattle/data/imf.csv" http://cattle.datalegend.net/build`
 
-`curl -i -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://localhost:8001/convert -H'Accept: text/turtle'`
+`curl -F "csv=@/home/amp/src/cattle/data/imf.csv" http://cattle.datalegend.net/build > imf.csv-metadata.json`
 
-`curl -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://localhost:8001/convert -H'Accept: text/turtle' > imf.csv.ttl`
+`curl -i -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://cattle.datalegend.net/convert`
 
-`curl -i -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://localhost:8001/convert -H'Accept: application/n-quads'`
+`curl -i -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://cattle.datalegend.net/convert -H'Accept: text/turtle'`
 
-`curl -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://localhost:8001/convert -H'Accept: application/n-quads' > imf.csv.nq`
+`curl -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://cattle.datalegend.net/convert -H'Accept: text/turtle' > imf.csv.ttl`
+
+`curl -i -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://cattle.datalegend.net/convert -H'Accept: application/n-quads'`
+
+`curl -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://cattle.datalegend.net/convert -H'Accept: application/n-quads' > imf.csv.nq`
