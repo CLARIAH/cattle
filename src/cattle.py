@@ -8,6 +8,7 @@ import logging
 import requests
 import os
 import subprocess
+from subprocess import check_output
 import json
 from rdflib import ConjunctiveGraph
 
@@ -48,10 +49,17 @@ def upload_cleanup():
 @app.route('/', methods=['GET', 'POST'])
 def cattle():
     cattlelog.info("Received request to render index")
-    resp = make_response(render_template('index.html'))
+    resp = make_response(render_template('index.html', version=check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT).strip()))
     resp.headers['X-Powered-By'] = 'https://github.com/albertmeronyo/cattle'
 
     return resp
+
+@app.route('/version', methods=['GET', 'POST'])
+def version():
+    v = check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT)
+    cattlelog.debug("Version {}".format(v))
+
+    return v
 
 @app.route('/build', methods=['POST'])
 def build():

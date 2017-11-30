@@ -20,7 +20,7 @@ cd ${CATTLE_INSTALL_DIR}
 chown ${CATTLE_USER}:${CATTLE_USER} ${CATTLE_HOME} -R
 
 pip install -r src/requirements.txt
-sudo pip install cow_csvw
+sudo pip install cow_csvw --upgrade
 
 #move nginx logs to ${GITLAB_LOG_DIR}/nginx
 sed -i \
