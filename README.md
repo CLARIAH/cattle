@@ -4,7 +4,7 @@
 
 ## Examples
 
-To understand this service please read the [COW](https://github.com/clariah/cow) documentation first! To convert csv's to Linked Data using COW this webservice provides the following options (in steps matching the COW 'logic').
+To understand this service please read the [COW](https://github.com/clariah/cow) documentation first! To convert csv's to Linked Data using COW this webservice provides the following options (in steps matching the COW 'logic'). You will need to run these commands from a term/shell (in Unix) or the command prompt in Windows.
 
 ### Step 1: build a metadata json file
 Build a metadata.json file containing the conversion script and save it as a file
