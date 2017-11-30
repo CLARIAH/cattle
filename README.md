@@ -17,6 +17,7 @@ WARNING!: Unlike using COW locally, this will actually OVERWRITE a previous buil
 This is something you do locally, so manually edit the `*-metadata.json` file you just created.
 
 ### Step 3: convert your csv file using the metadata.json script you created
+
 `curl -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://cattle.datalegend.net/convert -H'Accept: application/n-quads' > imf.csv.nq`
 
 
@@ -30,9 +31,7 @@ If you just want to print something on your screen and not write them, simply om
 `curl -i -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://cattle.datalegend.net/convert -H'Accept: application/n-quads'`
 
 Please note, that the webservice also allows you to save Linked Data as turtle (contrary to COW):
+
 `curl -i -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://cattle.datalegend.net/convert -H'Accept: text/turtle'`
 
 `curl -F "csv=@/home/amp/src/cattle/data/imf.csv" -F "json=@imf.csv-metadata.json" http://cattle.datalegend.net/convert -H'Accept: text/turtle' > imf.csv.ttl`
-
-
-
