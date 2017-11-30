@@ -119,9 +119,10 @@ def convert():
             with open(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq')) as nquads_file:
                 g = ConjunctiveGraph()
                 g.parse(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq'), format='nquads')
-            if not request.headers['Accept'] or request.headers['Accept'] == '*/*':
-                resp = make_response(g.serialize(format='application/ld+json'))
-                resp.headers['Content-Type'] = 'application/ld+json'
+            if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
+                resp = make_response(g.serialize(format='application/n-quads'))
+                resp.headers['Content-Type'] = 'application/n-quads'
+                resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq'
             elif request.headers['Accept'] in ACCEPTED_TYPES:
                 resp = make_response(g.serialize(format=request.headers['Accept']))
                 resp.headers['Content-Type'] = request.headers['Accept']

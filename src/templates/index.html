@@ -57,6 +57,43 @@
 	    <!--img src="{{url_for('.static', filename='cattle_logo_01.png')}}" -->
             <p class="lead"> <b>cattle</b> {{version}}, an instance of a COW Web service.</p>
 
+            <p class="h4">JSON schema file generation</p>
+
+
+          <div style="border:1px solid #ccc;">
+            <p class="lead">
+              <form method="post" enctype="multipart/form-data" action="/build">
+                <div class="form-group">
+                  <label for="csv">CSV file</label>
+                  <center><input type="file" class="form-control-file" style="margin-bottom: 20px" name="csv" id="csv"></center>
+                  <input type="submit" class="btn btn-primary" value="Upload">
+                </div>
+              </form>
+            </p>
+          </div>
+
+          <div style="margin-top: 30px; margin-bottom: 30px">
+          </div>
+
+          <p class="h4">CSVW conversion</p>
+
+          <div style="border:1px solid #ccc;">
+            <p class="lead">
+              <form method="post" enctype="multipart/form-data" action="/convert">
+                <div class="form-group">
+                  <label for="json">JSON file</label>
+                  <center><input type="file" class="form-control-file" style="margin-bottom: 20px" name="json" id="json"></center>
+                  <label for="csv2">CSV file</label>
+                  <center><input type="file" class="form-control-file" style="margin-bottom: 20px" name="csv" id="csv2"></center>
+                  <input type="submit" class="btn btn-primary" value="Upload">
+                </div>
+              </form>
+            </p>
+          </div>
+
+          <div style="margin-top: 30px; margin-bottom: 30px">
+          </div>
+
 	  <div class="inner cover">
 	    <p class="lead smaller">Find out more in <a href="https://github.com/albertmeronyo/cattle" target="_blank">GitHub</a>.
 	  </div>
@@ -86,5 +123,6 @@
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
   </body>
 </html>
