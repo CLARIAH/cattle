@@ -66,7 +66,7 @@
                 <div class="form-group">
                   <label for="csv">CSV file</label>
                   <center><input type="file" class="form-control-file" style="margin-bottom: 20px" name="csv" id="csv"></center>
-                  <input type="submit" class="btn btn-primary" value="Upload">
+                  <input type="submit" class="btn btn-primary" value="Upload" id="schemaupload">
                 </div>
               </form>
             </p>
@@ -85,7 +85,7 @@
                   <center><input type="file" class="form-control-file" style="margin-bottom: 20px" name="json" id="json"></center>
                   <label for="csv2">CSV file</label>
                   <center><input type="file" class="form-control-file" style="margin-bottom: 20px" name="csv" id="csv2"></center>
-                  <input type="submit" class="btn btn-primary" value="Upload">
+                  <input type="submit" class="btn btn-primary" value="Upload" id="convertupload">
                 </div>
               </form>
             </p>
@@ -98,13 +98,6 @@
 	    <p class="lead smaller">Find out more in <a href="https://github.com/albertmeronyo/cattle" target="_blank">GitHub</a>.
 	  </div>
 
-    <!--div>
-      <h1>Upload new file</h1>
-          <form method=post enctype=multipart/form-data action='/build'>
-            <p><input type=file name=file>
-               <input type=submit value=Upload>
-          </form>
-    </div -->
 
           <div class="mastfoot">
             <div class="inner">
@@ -123,6 +116,25 @@
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script>
+    $(document).ready(function() {
+      $('#schemaupload').prop('disabled', true);
+      $('#convertupload').prop('disabled', true);
+    });
+
+    $('#csv').change(function() {
+      $(this).val() ? $('#schemaupload').prop('disabled', false) : $('#schemaupload').prop('disabled', true);
+    });
+
+    $('#json').change(function() {
+      $(this).val() && $('#csv2').val() ? $('#convertupload').prop('disabled', false) : $('#convertupload').prop('disabled', true);
+    });
+
+    $('#csv2').change(function() {
+      $(this).val() && $('#json').val() ? $('#convertupload').prop('disabled', false) : $('#convertupload').prop('disabled', true);
+    });
+    </script>
+
 
   </body>
 </html>
