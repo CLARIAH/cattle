@@ -8,7 +8,6 @@ import logging
 import requests
 import os
 import subprocess
-from subprocess import check_output
 import json
 from rdflib import ConjunctiveGraph
 
@@ -49,14 +48,14 @@ def upload_cleanup():
 @app.route('/', methods=['GET', 'POST'])
 def cattle():
     cattlelog.info("Received request to render index")
-    resp = make_response(render_template('index.html', version=check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT).strip()))
+    resp = make_response(render_template('index.html', version=subprocess.check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT).strip()))
     resp.headers['X-Powered-By'] = 'https://github.com/albertmeronyo/cattle'
 
     return resp
 
 @app.route('/version', methods=['GET', 'POST'])
 def version():
-    v = check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT)
+    v = subprocess.check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT)
     cattlelog.debug("Version {}".format(v))
 
     return v
@@ -69,25 +68,32 @@ def build():
     upload_cleanup()
     resp = make_response()
 
-    if request.method == 'POST':
-        if 'csv' not in request.files:
-            cattlelog.error("No file part")
-            return resp, 400
-        file = request.files['csv']
-        if file.filename == '':
-            cattlelog.error('No selected file')
-            return resp, 400
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            with open(os.path.join(app.config['UPLOAD_FOLDER'], filename)) as saved_file:
-                cattlelog.debug(saved_file.read())
-            cattlelog.debug("File {} uploaded successfully".format(file.filename))
-            cattlelog.debug("Running COW build")
-            cattlelog.debug("Finished with exit status: {}".format(subprocess.call(['cow_tool', 'build', os.path.join(app.config['UPLOAD_FOLDER'], filename)])))
-            with open(os.path.join(app.config['UPLOAD_FOLDER'], filename + '-metadata.json')) as json_file:
-                json_schema = json.loads(json_file.read())
-            resp = make_response(jsonify(json_schema))
+    if 'csv' not in request.files:
+        cattlelog.error("No file part")
+        return resp, 400
+    file = request.files['csv']
+    if file.filename == '':
+        cattlelog.error('No selected file')
+        return resp, 400
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        with open(os.path.join(app.config['UPLOAD_FOLDER'], filename)) as saved_file:
+            cattlelog.debug(saved_file.read())
+        cattlelog.debug("File {} uploaded successfully".format(file.filename))
+        cattlelog.debug("Running COW build")
+        try:
+            ret = subprocess.check_output("cow_tool build {}".format(os.path.join(app.config['UPLOAD_FOLDER'], filename)), stderr=subprocess.STDOUT, shell=True)
+        except subprocess.CalledProcessError as e:
+            cattlelog.error("COW returned error status: {}".format(e.output))
+            return make_response(e.output), 200
+        cattlelog.debug("Finished with output: {}".format(ret))
+        with open(os.path.join(app.config['UPLOAD_FOLDER'], filename + '-metadata.json')) as json_file:
+            json_schema = json.loads(json_file.read())
+        resp = make_response(jsonify(json_schema))
+    else:
+        cattlelog.error('No file supplied or wrong file type')
+        return resp, 415
 
     return resp, 200
 
@@ -99,35 +105,42 @@ def convert():
     upload_cleanup()
     resp = make_response()
 
-    if request.method == 'POST':
-        if 'csv' not in request.files or 'json' not in request.files:
-            cattlelog.error("Expected a csv and a json file")
-            return resp, 400
-        file_csv = request.files['csv']
-        file_json = request.files['json']
-        if file_csv.filename == '' or file_json.filename == '':
-            cattlelog.error('No selected file; please send both csv and json file')
-            return resp, 400
-        if file_csv and file_json and allowed_file(file_csv.filename) and allowed_file(file_json.filename):
-            filename_csv = secure_filename(file_csv.filename)
-            filename_json = secure_filename(file_json.filename)
-            file_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv))
-            file_json.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_json))
-            cattlelog.debug("Files {} and {} uploaded successfully".format(file_csv.filename, file_json.filename))
-            cattlelog.debug("Running COW convert")
-            cattlelog.debug("Finished with exit status: {}".format(subprocess.call(['cow_tool', 'convert', os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)])))
-            with open(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq')) as nquads_file:
-                g = ConjunctiveGraph()
-                g.parse(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq'), format='nquads')
-            if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
-                resp = make_response(g.serialize(format='application/n-quads'))
-                resp.headers['Content-Type'] = 'application/n-quads'
-                resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq'
-            elif request.headers['Accept'] in ACCEPTED_TYPES:
-                resp = make_response(g.serialize(format=request.headers['Accept']))
-                resp.headers['Content-Type'] = request.headers['Accept']
-            else:
-                return 'Requested format unavailable', 415
+    if 'csv' not in request.files or 'json' not in request.files:
+        cattlelog.error("Expected a csv and a json file")
+        return resp, 400
+    file_csv = request.files['csv']
+    file_json = request.files['json']
+    if file_csv.filename == '' or file_json.filename == '':
+        cattlelog.error('No selected file; please send both csv and json file')
+        return resp, 400
+    if file_csv and file_json and allowed_file(file_csv.filename) and allowed_file(file_json.filename):
+        filename_csv = secure_filename(file_csv.filename)
+        filename_json = secure_filename(file_json.filename)
+        file_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv))
+        file_json.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_json))
+        cattlelog.debug("Files {} and {} uploaded successfully".format(file_csv.filename, file_json.filename))
+        cattlelog.debug("Running COW convert")
+        try:
+            ret = subprocess.check_output("cow_tool convert {}".format(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)), stderr=subprocess.STDOUT, shell=True)
+        except subprocess.CalledProcessError as e:
+            cattlelog.error("COW returned error status: {}".format(e.output))
+            return make_response(e.output), 200
+        cattlelog.debug("Finished with output: {}".format(ret))
+        with open(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq')) as nquads_file:
+            g = ConjunctiveGraph()
+            g.parse(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq'), format='nquads')
+        if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
+            resp = make_response(g.serialize(format='application/n-quads'))
+            resp.headers['Content-Type'] = 'application/n-quads'
+            resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq'
+        elif request.headers['Accept'] in ACCEPTED_TYPES:
+            resp = make_response(g.serialize(format=request.headers['Accept']))
+            resp.headers['Content-Type'] = request.headers['Accept']
+        else:
+            return 'Requested format unavailable', 415
+    else:
+        cattlelog.error('No files supplied or wrong file types')
+        return resp, 415
 
     return resp, 200
 
