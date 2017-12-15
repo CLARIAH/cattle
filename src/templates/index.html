@@ -134,8 +134,8 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script>
     $(document).ready(function() {
-      $('#schemaupload').prop('disabled', true);
-      $('#convertupload').prop('disabled', true);
+      $('#csv').val() ? $('#schemaupload').prop('disabled', false) : $('#schemaupload').prop('disabled', true);
+      $('#json').val() && $('#csv2').val() ? $('#convertupload').prop('disabled', false) : $('#convertupload').prop('disabled', true);      
     });
 
     $('#csv').change(function() {
