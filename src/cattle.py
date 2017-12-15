@@ -117,7 +117,7 @@ def convert():
         filename_csv = secure_filename(file_csv.filename)
         filename_json = secure_filename(file_json.filename)
         file_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv))
-        file_json.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_json))
+        file_json.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '-metadata.json'))
         cattlelog.debug("Files {} and {} uploaded successfully".format(file_csv.filename, file_json.filename))
         cattlelog.debug("Running COW convert")
         try:
@@ -126,9 +126,12 @@ def convert():
             cattlelog.error("COW returned error status: {}".format(e.output))
             return make_response(e.output), 200
         cattlelog.debug("Finished with output: {}".format(ret))
-        with open(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq')) as nquads_file:
-            g = ConjunctiveGraph()
-            g.parse(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq'), format='nquads')
+        try:
+            with open(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq')) as nquads_file:
+                g = ConjunctiveGraph()
+                g.parse(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq'), format='nquads')
+        except IOError:
+            raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
         if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
             resp = make_response(g.serialize(format='application/n-quads'))
             resp.headers['Content-Type'] = 'application/n-quads'
