@@ -78,8 +78,8 @@ def build():
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        with open(os.path.join(app.config['UPLOAD_FOLDER'], filename)) as saved_file:
-            cattlelog.debug(saved_file.read())
+        #   with open(os.path.join(app.config['UPLOAD_FOLDER'], filename)) as saved_file:
+        #        cattlelog.debug(saved_file.read())
         cattlelog.debug("File {} uploaded successfully".format(file.filename))
         cattlelog.debug("Running COW build")
         try:
