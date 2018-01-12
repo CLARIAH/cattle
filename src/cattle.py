@@ -10,6 +10,7 @@ import os
 import subprocess
 import json
 from rdflib import ConjunctiveGraph
+from cow_csvw.csvw_tool import COW
 
 # The Flask app
 app = Flask(__name__)
@@ -80,15 +81,17 @@ def build():
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         #   with open(os.path.join(app.config['UPLOAD_FOLDER'], filename)) as saved_file:
         #        cattlelog.debug(saved_file.read())
-        cattlelog.debug("File {} uploaded successfully".format(file.filename))
+        cattlelog.debug("File {} uploaded successfully".format(os.path.join(app.config['UPLOAD_FOLDER'], file.filename)))
         cattlelog.debug("Running COW build")
-        try:
-            ret = subprocess.check_output("cow_tool build {}".format(os.path.join(app.config['UPLOAD_FOLDER'], filename)), stderr=subprocess.STDOUT, shell=True)
-        except subprocess.CalledProcessError as e:
-            cattlelog.error("COW returned error status: {}".format(e.output))
-            return make_response(e.output), 200
-        cattlelog.debug("Finished with output: {}".format(ret))
-        with open(os.path.join(app.config['UPLOAD_FOLDER'], filename + '-metadata.json')) as json_file:
+        # try:
+        #     ret = subprocess.check_output("cow_tool build {}".format(os.path.join(app.config['UPLOAD_FOLDER'], filename)), stderr=subprocess.STDOUT, shell=True)
+        # except subprocess.CalledProcessError as e:
+        #     cattlelog.error("COW returned error status: {}".format(e.output))
+        #     return make_response(e.output), 200
+
+        COW(mode='build', files=[os.path.join(app.config['UPLOAD_FOLDER'], file.filename)])
+        cattlelog.debug("Build finished")
+        with open(os.path.join(app.config['UPLOAD_FOLDER'], file.filename + '-metadata.json')) as json_file:
             json_schema = json.loads(json_file.read())
         resp = make_response(jsonify(json_schema))
     else:
@@ -142,10 +145,19 @@ def convert():
         else:
             return 'Requested format unavailable', 415
     else:
-        cattlelog.error('No files supplied or wrong file types')
-        return resp, 415
+        raise Exception('No files supplied, wrong file types, or unexpected file extensions')
 
     return resp, 200
 
+# Error handlers
+
+@app.errorhandler(404)
+def pageNotFound(error):
+    return render_template('error.html', error_message="Page not found")
+
+@app.errorhandler(500)
+def pageNotFound(error):
+    return render_template('error.html', error_message=error.message)
+
 if __name__ == '__main__':
-    app.run(port=8088, debug=True)
+    app.run(port=8088, debug=False)
