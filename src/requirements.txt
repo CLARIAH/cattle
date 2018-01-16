@@ -4,6 +4,7 @@ click==6.7
 Flask==0.12.2
 gevent==1.2.2
 greenlet==0.4.12
+eventlet==0.22.0
 gunicorn==19.7.1
 idna==2.6
 isodate==0.6.0
