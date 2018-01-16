@@ -135,7 +135,7 @@ def convert():
         try:
             with open(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq')) as nquads_file:
                 g = ConjunctiveGraph()
-                g.parse(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq'), format='nquads')
+                g.parse(nquads_file, format='nquads')
         except IOError:
             raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
         if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
@@ -154,6 +154,56 @@ def convert():
         raise Exception('No files supplied, wrong file types, or unexpected file extensions')
 
     return resp, 200
+
+# Druid interface
+
+@app.route('/druid/<username>/<dataset>')
+def druid(username, dataset):
+    '''
+    Retrieves a list of Druid files in a dataset; if .csv and .json present, downloads them, converts them, uploads results
+    '''
+
+    cattlelog.debug("Starting Druid-based conversion")
+
+    upload_cleanup()
+
+    cattlelog.debug("Listing remote files in Druid for user {} dataset {}".format(username, dataset))
+    r = requests.get("https://api.druid.datalegend.net/datasets/{}/{}/files".format(username, dataset))
+    cattlelog.debug("Remote files are: {}".format(r.json()))
+    files = json.loads(r.text)
+    filenames = [f['fileName'] for f in files]
+    candidates = []
+    for f in filenames:
+        if '.csv' in f and (f + '-metadata.json') in filenames:
+            candidates.append(f)
+
+    cattlelog.debug('Downloading and converting: {}'.format(candidates))
+
+    for f in candidates:
+
+        # Download
+        with open(os.path.join(app.config['UPLOAD_FOLDER'], f), 'w') as file_csv:
+            file_csv.write(requests.get("https://api.druid.datalegend.net/datasets/{}/{}/files/{}".format(username, dataset, f)).text)
+        with open(os.path.join(app.config['UPLOAD_FOLDER'], f + '-metadata.json'), 'w') as file_json:
+            file_json.write(requests.get("https://api.druid.datalegend.net/datasets/{}/{}/files/{}".format(username, dataset, f + '-metadata.json')).text)
+
+        # Convert
+        COW(mode='convert', files=[os.path.join(app.config['UPLOAD_FOLDER'], f)])
+        cattlelog.debug("Convert finished")
+        try:
+            with open(os.path.join(app.config['UPLOAD_FOLDER'], f + '.nq')) as nquads_file:
+                g = ConjunctiveGraph()
+                g.parse(nquads_file, format='nquads')
+        except IOError:
+            raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
+        out = StringIO.StringIO()
+        with gzip.GzipFile(fileobj=out, mode="w") as gzip_file:
+            gzip_file.write(g.serialize(format='application/n-quads'))
+        resp = make_response(out.getvalue())
+        resp.headers['Content-Type'] = 'application/gzip'
+        resp.headers['Content-Disposition'] = 'attachment; filename=' + f + '.nq.gz'
+
+    return resp
 
 # Error handlers
 
