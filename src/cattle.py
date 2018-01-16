@@ -123,12 +123,13 @@ def convert():
         file_json.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '-metadata.json'))
         cattlelog.debug("Files {} and {} uploaded successfully".format(file_csv.filename, file_json.filename))
         cattlelog.debug("Running COW convert")
-        try:
-            ret = subprocess.check_output("cow_tool convert {}".format(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)), stderr=subprocess.STDOUT, shell=True)
-        except subprocess.CalledProcessError as e:
-            cattlelog.error("COW returned error status: {}".format(e.output))
-            return make_response(e.output), 200
-        cattlelog.debug("Finished with output: {}".format(ret))
+        # try:
+        #     ret = subprocess.check_output("cow_tool convert {}".format(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)), stderr=subprocess.STDOUT, shell=True)
+        # except subprocess.CalledProcessError as e:
+        #     cattlelog.error("COW returned error status: {}".format(e.output))
+        #     return make_response(e.output), 200
+        COW(mode='convert', files=[os.path.join(app.config['UPLOAD_FOLDER'], file_csv.filename)])
+        cattlelog.debug("Convert finished")
         try:
             with open(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq')) as nquads_file:
                 g = ConjunctiveGraph()
