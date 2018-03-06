@@ -20,6 +20,8 @@ This is the workflow to trigger cattle conversions from druid without using catt
 6. Usually a cattle error page will pop up if something went very wrong. Otherwise, a blank page is generally a good sign and your request should be under processing.
 7. Wait for the conversion to finish. If it succeeds, your converted Linked Data will become available in the *Graphs* section of your dataset's page. Notice the timestamps in the graph names; if the conversion went well, you'll see a relatively recent date in those.
 
+So to be perfectly clear: there's no confirmation message when the conversion finishes; you need to keep an eye on druid's *Graphs* to confirm the conversion finished; and you can close the browser tab you opened in step 5 right after entering the URL.
+
 That's it! There are two major drawbacks
 
 - There is no monitoring of long conversion processes
