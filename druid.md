@@ -17,7 +17,8 @@ This is the workflow to trigger cattle conversions from druid without using catt
 3. In the dataset main page, go to *Files* on the vertical left menu
 4. Click on *Upload files* and select both your CSV and JSON schema file
 5. After the upload is complete, open a new tab in your browser and go to the URL http://cattle.datalegend.net/druid/user/dataset, where *user* is your druid username, and *dataset* is the name of the dataset where you have uploaded the CSV and JSON schema files
-6. Wait for the conversion to finish. If it succeeds, your converted Linked Data will become available in the *Graphs* section of your dataset's page. Notice the timestamps in the graph names; if the conversion went well, you'll see a relatively recent date in those.
+6. Usually a cattle error page will pop up if something went very wrong. Otherwise, a blank page is generally a good sign and your request should be under processing.
+7. Wait for the conversion to finish. If it succeeds, your converted Linked Data will become available in the *Graphs* section of your dataset's page. Notice the timestamps in the graph names; if the conversion went well, you'll see a relatively recent date in those.
 
 That's it! There are two major drawbacks
 
