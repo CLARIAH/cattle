@@ -139,12 +139,17 @@ def convert():
         except IOError:
             raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
         if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
-            out = StringIO.StringIO()
-            with gzip.GzipFile(fileobj=out, mode="w") as f:
-              f.write(g.serialize(format='application/n-quads'))
-            resp = make_response(out.getvalue())
-            resp.headers['Content-Type'] = 'application/gzip'
-            resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq.gz'
+            if request.form.get('zip'): #Requested compressed download
+                out = StringIO.StringIO()
+                with gzip.GzipFile(fileobj=out, mode="w") as f:
+                  f.write(g.serialize(format='application/n-quads'))
+                resp = make_response(out.getvalue())
+                resp.headers['Content-Type'] = 'application/gzip'
+                resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq.gz'
+            else:
+                resp = make_response(g.serialize(format='application/n-quads'))
+                resp.headers['Content-Type'] = 'application/n-quads'
+                resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq'
         elif request.headers['Accept'] in ACCEPTED_TYPES:
             resp = make_response(g.serialize(format=request.headers['Accept']))
             resp.headers['Content-Type'] = request.headers['Accept']
