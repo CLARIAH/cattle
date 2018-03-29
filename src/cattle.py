@@ -162,7 +162,7 @@ def convert():
 
 # Druid interface
 
-@app.route('/druid/<username>/<dataset>', metods=['GET', 'POST'])
+@app.route('/druid/<username>/<dataset>', methods=['GET', 'POST'])
 def druid(username, dataset):
     '''
     Retrieves a list of Druid files in a dataset; if .csv and .json present, downloads them, converts them, uploads results
