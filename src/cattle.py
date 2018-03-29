@@ -52,7 +52,7 @@ def upload_cleanup():
 def cattle():
     cattlelog.info("Received request to render index")
     resp = make_response(render_template('index.html', version=subprocess.check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT).strip()))
-    resp.headers['X-Powered-By'] = 'https://github.com/albertmeronyo/cattle'
+    resp.headers['X-Powered-By'] = 'https://github.com/CLARIAH/cattle'
 
     return resp
 
@@ -162,7 +162,7 @@ def convert():
 
 # Druid interface
 
-@app.route('/druid/<username>/<dataset>')
+@app.route('/druid/<username>/<dataset>', metods=['GET', 'POST'])
 def druid(username, dataset):
     '''
     Retrieves a list of Druid files in a dataset; if .csv and .json present, downloads them, converts them, uploads results
@@ -201,12 +201,22 @@ def druid(username, dataset):
                 g.parse(nquads_file, format='nquads')
         except IOError:
             raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
-        out = StringIO.StringIO()
-        with gzip.GzipFile(fileobj=out, mode="w") as gzip_file:
+
+        # Compress result
+        out = os.path.join(app.config['UPLOAD_FOLDER'], f + '.nq.gz')
+        with gzip.open(out, mode="w") as gzip_file:
             gzip_file.write(g.serialize(format='application/n-quads'))
-        resp = make_response(out.getvalue())
-        resp.headers['Content-Type'] = 'application/gzip'
-        resp.headers['Content-Disposition'] = 'attachment; filename=' + f + '.nq.gz'
+
+        # Upload to druid
+        cattlelog.debug("Uploading to Druid")
+        # REMOVE
+        token = "xxx"
+        cattlelog.debug("user: {} dataset: {} token: {} file: {}".format(username, dataset, token, out))
+        #subprocess.Popen(args=["/Users/Albert/src/WP4-Upload-Cattle/uploadFiles.sh", token, username, dataset, out])
+        subprocess.Popen(args=["./uploadFiles.sh", token, username, dataset, out], cwd="./WP4-Upload-Cattle")
+        cattlelog.debug("Upload to Druid finished")
+
+        resp = make_response()
 
     return resp
 
