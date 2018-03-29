@@ -162,7 +162,7 @@ def convert():
 
 # Druid interface
 
-@app.route('/druid/<username>/<dataset>', methods=['GET', 'POST'])
+@app.route('/druid/<username>/<dataset>', methods=['POST'])
 def druid(username, dataset):
     '''
     Retrieves a list of Druid files in a dataset; if .csv and .json present, downloads them, converts them, uploads results
@@ -215,6 +215,9 @@ def druid(username, dataset):
         #subprocess.Popen(args=["/Users/Albert/src/WP4-Upload-Cattle/uploadFiles.sh", token, username, dataset, out])
         subprocess.Popen(args=["./uploadFiles.sh", token, username, dataset, out], cwd="./WP4-Upload-Cattle")
         cattlelog.debug("Upload to Druid finished")
+
+        cattlelog.debug('Headers from triggered webhook:')
+        cattlelog.debug(request.headers)
 
         resp = make_response()
 
