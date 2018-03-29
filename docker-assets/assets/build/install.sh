@@ -26,6 +26,8 @@ sudo pip install cow_csvw --upgrade
 curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
 sudo apt-get install -y nodejs build-essential
 
+sudo rm -rf /var/lib/apt/lists/*
+
 git clone https://github.com/CLARIAH/WP4-Upload-Cattle
 cd WP4-Upload-Cattle
 npm install
