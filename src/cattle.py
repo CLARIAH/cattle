@@ -36,7 +36,8 @@ ACCEPTED_TYPES = ['application/ld+json',
                   'text/turtle',
                   'application/ld+json; profile="http://www.w3.org/ns/activitystreams', 'turtle', 'json-ld', 'nquads']
 
-AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ1bmtub3duIiwiaXNzIjoidHJpcGx5LmNjIiwianRpIjoiYjFmNTI0ZTQtNzNiMi00NjhmLTllMjAtMzFjNzljY2EzMTE3Iiwic2MiOnsiYWNjIjpbImEiXSwiZHMiOlsiYSJdLCJ1cyI6WyJhIl19LCJ1aWQiOiI1ODkwNjI2MTE0M2ZmYzAwNTA3OTRkZDAiLCJpYXQiOjE1MTcyMzU0OTN9.Hb9LhFOfFOuTtsukG8lijZaRkF_BAHfpqvcDXCO8bS0"
+# TODO: make this a container variable in the Docker compose file
+AUTH_TOKEN = "xxx"
 
 # Util functions
 
@@ -56,7 +57,7 @@ def upload_cleanup():
 def cattle():
     cattlelog.info("Received request to render index")
     resp = make_response(render_template('index.html', version=subprocess.check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT).strip()))
-    resp.headers['X-Powered-By'] = 'https://github.com/albertmeronyo/cattle'
+    resp.headers['X-Powered-By'] = 'https://github.com/CLARIAH/cattle'
 
     return resp
 
@@ -143,12 +144,17 @@ def convert():
         except IOError:
             raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
         if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
-            out = StringIO.StringIO()
-            with gzip.GzipFile(fileobj=out, mode="w") as f:
-              f.write(g.serialize(format='application/n-quads'))
-            resp = make_response(out.getvalue())
-            resp.headers['Content-Type'] = 'application/gzip'
-            resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq.gz'
+            if request.form.get('zip'): #Requested compressed download
+                out = StringIO.StringIO()
+                with gzip.GzipFile(fileobj=out, mode="w") as f:
+                  f.write(g.serialize(format='application/n-quads'))
+                resp = make_response(out.getvalue())
+                resp.headers['Content-Type'] = 'application/gzip'
+                resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq.gz'
+            else:
+                resp = make_response(g.serialize(format='application/n-quads'))
+                resp.headers['Content-Type'] = 'application/n-quads'
+                resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq'
         elif request.headers['Accept'] in ACCEPTED_TYPES:
             resp = make_response(g.serialize(format=request.headers['Accept']))
             resp.headers['Content-Type'] = request.headers['Accept']
@@ -161,7 +167,7 @@ def convert():
 
 # Druid interface
 
-@app.route('/druid/<username>/<dataset>')
+@app.route('/druid/<username>/<dataset>', methods=['POST'])
 def druid(username, dataset):
     '''
     Retrieves a list of Druid files in a dataset; if .csv and .json present, downloads them, converts them, uploads results
@@ -201,8 +207,10 @@ def druid(username, dataset):
                 g.parse(nquads_file, format='nquads')
         except IOError:
             raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
-        out = StringIO.StringIO()
-        with gzip.GzipFile(fileobj=out, mode="w") as gzip_file:
+
+        # Compress result
+        out = os.path.join(app.config['UPLOAD_FOLDER'], f + '.nq.gz')
+        with gzip.open(out, mode="w") as gzip_file:
             gzip_file.write(g.serialize(format='application/n-quads'))
 
         # Write StringIO to file

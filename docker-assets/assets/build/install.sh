@@ -22,6 +22,17 @@ chown ${CATTLE_USER}:${CATTLE_USER} ${CATTLE_HOME} -R
 pip install -r src/requirements.txt
 sudo pip install cow_csvw --upgrade
 
+# Druid uploadFile
+curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
+sudo apt-get install -y nodejs build-essential
+
+sudo rm -rf /var/lib/apt/lists/*
+
+git clone https://github.com/CLARIAH/WP4-Upload-Cattle
+cd WP4-Upload-Cattle
+npm install
+npm run build
+
 #move nginx logs to ${GITLAB_LOG_DIR}/nginx
 sed -i \
  -e "s|access_log /var/log/nginx/access.log;|access_log ${CATTLE_LOG_DIR}/nginx/access.log;|" \

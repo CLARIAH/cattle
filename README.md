@@ -4,7 +4,9 @@
 
 ## Introduction
 
-To understand this service please read the [COW](https://github.com/clariah/cow) documentation first! To convert CSV's to Linked Data using this webservice and ruminator, goto [http://cattle.datalegend.net](http://cattle.datalegend.net)
+cattle is a simple web service to convert CSV files to RDF, using the CSVW compatible library [COW](https://github.com/clariah/cow)
+
+To understand this service please read the [COW](https://github.com/clariah/cow) documentation first. To convert CSVs to Linked Data using this webservice and ruminator, goto [http://cattle.datalegend.net](http://cattle.datalegend.net)
 
 The cattle web service provides the following options (in steps matching the COW 'logic'). You will need to run these commands from a term/shell (in Unix) or the command prompt in Windows.
 
