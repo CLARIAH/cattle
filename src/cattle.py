@@ -13,6 +13,8 @@ from rdflib import ConjunctiveGraph
 from cow_csvw.csvw_tool import COW
 import StringIO
 import gzip
+import shutil
+import traceback
 
 # The Flask app
 app = Flask(__name__)
@@ -33,6 +35,8 @@ ACCEPTED_TYPES = ['application/ld+json',
                   'application/n-quads',
                   'text/turtle',
                   'application/ld+json; profile="http://www.w3.org/ns/activitystreams', 'turtle', 'json-ld', 'nquads']
+
+AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ1bmtub3duIiwiaXNzIjoidHJpcGx5LmNjIiwianRpIjoiYjFmNTI0ZTQtNzNiMi00NjhmLTllMjAtMzFjNzljY2EzMTE3Iiwic2MiOnsiYWNjIjpbImEiXSwiZHMiOlsiYSJdLCJ1cyI6WyJhIl19LCJ1aWQiOiI1ODkwNjI2MTE0M2ZmYzAwNTA3OTRkZDAiLCJpYXQiOjE1MTcyMzU0OTN9.Hb9LhFOfFOuTtsukG8lijZaRkF_BAHfpqvcDXCO8bS0"
 
 # Util functions
 
@@ -166,6 +170,7 @@ def druid(username, dataset):
     cattlelog.debug("Starting Druid-based conversion")
 
     upload_cleanup()
+    resp = make_response()
 
     cattlelog.debug("Listing remote files in Druid for user {} dataset {}".format(username, dataset))
     r = requests.get("https://api.druid.datalegend.net/datasets/{}/{}/files".format(username, dataset))
@@ -199,11 +204,24 @@ def druid(username, dataset):
         out = StringIO.StringIO()
         with gzip.GzipFile(fileobj=out, mode="w") as gzip_file:
             gzip_file.write(g.serialize(format='application/n-quads'))
-        resp = make_response(out.getvalue())
-        resp.headers['Content-Type'] = 'application/gzip'
-        resp.headers['Content-Disposition'] = 'attachment; filename=' + f + '.nq.gz'
 
-    return resp
+        # Write StringIO to file
+        with open ('/tmp/converted.nq.gz', 'w') as fd:
+            out.seek(0)
+            shutil.copyfileobj(out, fd)
+        # resp = make_response(out.getvalue())
+        # resp.headers['Content-Type'] = 'application/gzip'
+        # resp.headers['Content-Disposition'] = 'attachment; filename=' + f + '.nq.gz'
+
+        # Upload
+        # Using triply's uploadFiles.sh client
+        up = subprocess.Popen(['./uploadFiles.sh ' + ' ' + AUTH_TOKEN + ' ' + username + ' ' + dataset + ' ' + '/tmp/converted.nq.gz'], cwd='/home/cattle/cattle/src/WP4-Upload-Cattle', stderr=subprocess.STDOUT, shell=True)
+        # except:
+        #     cattlelog.error("Druid uploader returned error status")
+        #     traceback.print_stack()
+        #     continue
+
+    return resp, 200
 
 # Error handlers
 
