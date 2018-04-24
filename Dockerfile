@@ -13,7 +13,7 @@ ENV CATTLE_INSTALL_DIR="${CATTLE_HOME}/cattle" \
     CATTLE_RUNTIME_DIR="${CATTLE_CACHE_DIR}/runtime"
 
 RUN apt-get update \
- && DEBIAN_FRONTEND=noninteractive apt-get install -y nginx git-core logrotate python-pip locales gettext-base sudo\
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y nginx git-core logrotate python python-pip locales gettext-base sudo curl \
  && update-locale LANG=C.UTF-8 LC_MESSAGES=POSIX \
  && locale-gen en_US.UTF-8 \
  && DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales \
