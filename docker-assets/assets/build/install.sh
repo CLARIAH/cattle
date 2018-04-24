@@ -28,6 +28,17 @@ sed -i \
  -e "s|error_log /var/log/nginx/error.log;|error_log ${CATTLE_LOG_DIR}/nginx/error.log;|" \
  /etc/nginx/nginx.conf
 
+# npm requirements for upload
+curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+sudo apt-get install -y nodejs
+sudo npm install -g npm
+rm -rf src/WP4-Upload-Cattle
+cd src
+git clone https://github.com/CLARIAH/WP4-Upload-Cattle
+cd WP4-Upload-Cattle
+sudo npm install
+sudo npm run build
+cd ${CATTLE_INSTALL_DIR}
 
  # configure gitlab log rotation
  cat > /etc/logrotate.d/grlc << EOF
