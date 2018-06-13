@@ -23,15 +23,15 @@ pip install -r src/requirements.txt
 sudo pip install cow_csvw --upgrade
 
 # Druid uploadFile
-curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
-sudo apt-get install -y nodejs build-essential
+#curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
+#sudo apt-get install -y nodejs build-essential
 
-sudo rm -rf /var/lib/apt/lists/*
+#sudo rm -rf /var/lib/apt/lists/*
 
-git clone https://github.com/CLARIAH/WP4-Upload-Cattle
-cd WP4-Upload-Cattle
-npm install
-npm run build
+#git clone https://github.com/CLARIAH/WP4-Upload-Cattle
+#cd WP4-Upload-Cattle
+#npm install
+#npm run build
 
 #move nginx logs to ${GITLAB_LOG_DIR}/nginx
 sed -i \
@@ -40,15 +40,26 @@ sed -i \
  /etc/nginx/nginx.conf
 
 # npm requirements for upload
-curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-sudo apt-get install -y nodejs
+
+#curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+#sudo apt-get install -y nodejs
+#sudo npm install -g npm
+#rm -rf src/WP4-Upload-Cattle
+#cd src
+#git clone https://github.com/CLARIAH/WP4-Upload-Cattle
+#cd WP4-Upload-Cattle
+#sudo npm install
+#sudo npm run build
+
+# Druid uploadFile
+curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
+sudo apt-get install -y nodejs build-essential
+
 sudo npm install -g npm
-rm -rf src/WP4-Upload-Cattle
-cd src
-git clone https://github.com/CLARIAH/WP4-Upload-Cattle
-cd WP4-Upload-Cattle
-sudo npm install
-sudo npm run build
+mkdir uploadScripts
+cd uploadScripts
+npm install @triply/client.js@latest
+
 cd ${CATTLE_INSTALL_DIR}
 
  # configure gitlab log rotation
