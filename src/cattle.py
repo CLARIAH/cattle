@@ -134,7 +134,8 @@ def build():
 		filename = secure_filename(file.filename)
 		make_hash_folder(file)
 
-		file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+		if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
+			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 		#   with open(os.path.join(app.config['UPLOAD_FOLDER'], filename)) as saved_file:
 		#        cattlelog.debug(saved_file.read())
 		cattlelog.debug("File {} uploaded successfully".format(os.path.join(app.config['UPLOAD_FOLDER'], file.filename)))
@@ -174,11 +175,12 @@ def convert():
 		return resp, 400
 	if file_csv and file_json and allowed_file(file_csv.filename) and allowed_file(file_json.filename):
 		filename_csv = secure_filename(file_csv.filename)
-		filename_json = secure_filename(file_json.filename)
 		make_hash_folder(file_csv, file_json)
 
-		file_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv))
-		file_json.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '-metadata.json'))
+		if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)):
+			file_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv))
+		if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '-metadata.json')):
+			file_json.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '-metadata.json'))
 		cattlelog.debug("Files {} and {} uploaded successfully".format(file_csv.filename, file_json.filename))
 		cattlelog.debug("Running COW convert")
 		# try:
