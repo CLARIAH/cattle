@@ -16,6 +16,7 @@ import gzip
 import shutil
 import traceback
 from hashlib import md5
+from time import sleep
 
 # The Flask app
 app = Flask(__name__)
@@ -39,6 +40,7 @@ ACCEPTED_TYPES = ['application/ld+json',
 
 # TODO: make this a container variable in the Docker compose file
 AUTH_TOKEN = "xxx"
+AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ1bmtub3duIiwiaXNzIjoidHJpcGx5LmNjIiwianRpIjoiMmZmYzBhMWYtYWJmZS00ZjllLWIxOGEtZDcwMzljZGIyYmQzIiwic2MiOnsiZHMiOlsiYSJdLCJhY2MiOlsiYSJdfSwidWlkIjoiNWFiY2JjZmQ1NWRlNGYwMjU4YWU5NmExIiwiaWF0IjoxNTIyMzIwMTg4fQ.k9zM0hLuZo-sxlql5OWV2NYF4eFpKA522NeeOB1Mk6M"
 
 # Util functions
 
@@ -69,34 +71,19 @@ def create_hash(csv_file, json_file, read_files=True):
 
 def make_hash_folder(csv_file, json_file=None):
 	hash_folder_name = create_hash(csv_file, json_file)
-	app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], hash_folder_name)
+	app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], "web_interface", hash_folder_name)
 	try:
 		os.mkdir(app.config['UPLOAD_FOLDER'])
 	except:
 		cattlelog.debug("This folder already exists, this might result in concurrency problems.")
 
-def make_hash_folder_druid(csv_string, json_string=""):
+def make_hash_folder_druid(csv_string, username, dataset, json_string=""):
 	hash_folder_name = create_hash(csv_string, json_string, False)
 	try:
-		os.mkdir(os.path.join(app.config['UPLOAD_FOLDER'], hash_folder_name))
+		os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], username, dataset, hash_folder_name))
 	except:
 		cattlelog.debug("This folder already exists, this might result in concurrency problems.")
-	return hash_folder_name
-
-# # if read_files is True the files were posted by the user, if read_files is False they were retrieved from Druid.
-# def make_hash_folder(csv, json, read_files=True)
-# 	create_hash(csv, json, read_files)
-# 	try:
-# 		os.mkdir(os.path.join(app.config['UPLOAD_FOLDER'], hash_folder_name))
-# 	except:
-# 		cattlelog.debug("This folder already exists, this might result in concurrency problems.")
-
-# 	if read_files:
-# 		app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], hash_folder_name)
-# 	else:
-# 		return hash_folder_name
-
-
+	return os.path.join(username, dataset, hash_folder_name)
 
 # Routes
 
@@ -248,7 +235,7 @@ class druid2cattle:
 	def download_pair(self, f, pair):
 		csv_string = requests.get(pair[0]).text
 		json_string = requests.get(pair[1]).text
-		self.path = os.path.join(make_hash_folder_druid(csv_string, json_string), secure_filename(f))
+		self.path = os.path.join(make_hash_folder_druid(csv_string, self.username, self.dataset, json_string), secure_filename(f))
 
 		with open(os.path.join(app.config['UPLOAD_FOLDER'], self.path), 'w') as file_csv:
 			file_csv.write(csv_string)
@@ -275,7 +262,6 @@ class druid2cattle:
 		with gzip.open(out, mode="w") as gzip_file:
 			gzip_file.write(graph.serialize(format='application/n-quads'))
 
-		#REMOVE TOKEN!
 		cattlelog.debug("user: {} dataset: {} file: {}".format(self.username, self.dataset, out))
 		# using triply's uploadFiles client
 		subprocess.Popen(args=["./uploadScripts/node_modules/.bin/uploadFiles", "-t", AUTH_TOKEN, "-d", self.dataset, "-a", self.username, "-u", "https://api.druid.datalegend.net",  out])
@@ -307,7 +293,7 @@ class druid2cattle:
 	def download_single(self, f, candidate):
 		# Downloads the csv
 		csv_string = requests.get(candidate).text
-		self.path = os.path.join(make_hash_folder_druid(csv_string), secure_filename(f))
+		self.path = os.path.join(make_hash_folder_druid(csv_string, self.username, self.dataset), secure_filename(f))
 
 		with open(os.path.join(app.config['UPLOAD_FOLDER'], self.path), 'w') as file_csv:
 			file_csv.write(csv_string)
@@ -332,17 +318,26 @@ class druid2cattle:
 		else:
 			return False
 
+	# if .csv without json counterpart are present in the assets, downloads the csv, creates json, converts them, uploads results
+	# during the process checks will determine whether the json counterpart still isn't uploaded, if it is found it will stop
 	def handle_singles(self, candidates):
-		# if .csv without json counterpart are present in the assets, downloads the csv, creates json, converts them, uploads results
-		# during the process checks will determine whether the json counterpart still isn't uploaded, if it is found it will stop
+		cattlelog.debug("Waiting for possible json-files.")
+		sleep(10) #wait for possible json files to be uploaded.
+		cattlelog.debug("Starting with the single csv-files.")
 		for f in candidates.keys():
 			cattlelog.debug("handling single: " + f)
 			self.download_single(f, candidates[f])
-			if self.found_new_json(f): continue
+			if self.found_new_json(f):
+				cattlelog.debug("Stopped because a new json was found.")
+				continue
 			self.build_auto_json()
-			if self.found_new_json(f): continue
+			if self.found_new_json(f):
+				cattlelog.debug("Stopped because a new json was found.")
+				continue
 			graph = self.build_graph()
-			if self.found_new_json(f): continue
+			if self.found_new_json(f):
+				cattlelog.debug("Stopped because a new json was found.")
+				continue
 			self.upload_graph(graph)
 
 
