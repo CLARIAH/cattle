@@ -16,7 +16,7 @@ import gzip
 import shutil
 import traceback
 from hashlib import md5
-from time import sleep
+from time import sleep, time
 
 # The Flask app
 app = Flask(__name__)
@@ -38,9 +38,7 @@ ACCEPTED_TYPES = ['application/ld+json',
 				  'text/turtle',
 				  'application/ld+json; profile="http://www.w3.org/ns/activitystreams', 'turtle', 'json-ld', 'nquads']
 
-# TODO: make this a container variable in the Docker compose file
 AUTH_TOKEN = "xxx"
-AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ1bmtub3duIiwiaXNzIjoidHJpcGx5LmNjIiwianRpIjoiMmZmYzBhMWYtYWJmZS00ZjllLWIxOGEtZDcwMzljZGIyYmQzIiwic2MiOnsiZHMiOlsiYSJdLCJhY2MiOlsiYSJdfSwidWlkIjoiNWFiY2JjZmQ1NWRlNGYwMjU4YWU5NmExIiwiaWF0IjoxNTIyMzIwMTg4fQ.k9zM0hLuZo-sxlql5OWV2NYF4eFpKA522NeeOB1Mk6M"
 
 # Util functions
 
@@ -73,7 +71,7 @@ def make_hash_folder(csv_file, json_file=None):
 	hash_folder_name = create_hash(csv_file, json_file)
 	app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], "web_interface", hash_folder_name)
 	try:
-		os.mkdir(app.config['UPLOAD_FOLDER'])
+		os.makedirs(app.config['UPLOAD_FOLDER'])
 	except:
 		cattlelog.debug("This folder already exists, this might result in concurrency problems.")
 
@@ -232,10 +230,27 @@ class druid2cattle:
 
 		return duos, single_csv
 
+	#returns True if the hash folder already exists and has been modified in the last 60 seconds.
+	def check_for_concurrency(self):
+		csv_path = os.path.join(app.config['UPLOAD_FOLDER'], self.path)
+		if os.path.exists(csv_path) and (time() - os.path.getmtime(csv_path) < 60):
+			cattlelog.debug("The hash folder has been modified in the last " + str(time() - os.path.getmtime(csv_path)) + " seconds, so we will wait.")
+			return True
+		else:
+			cattlelog.debug("\nNope, no concurrency problem I can smell.\n"+str(time() - os.path.getmtime(csv_path) < 60)+"\n")
+			return False
+
+	#downloads the csv json file pair from druid, returns False if the hash folder has been modified in the last 60 seconds,
+	#returns True otherwise.
 	def download_pair(self, f, pair):
 		csv_string = requests.get(pair[0]).text
 		json_string = requests.get(pair[1]).text
-		self.path = os.path.join(make_hash_folder_druid(csv_string, self.username, self.dataset, json_string), secure_filename(f))
+		self.path = os.path.join(make_hash_folder_druid(csv_string, self.username, self.dataset, json_string))
+
+		if self.check_for_concurrency():
+			return False
+
+		self.path = os.path.join(self.path, secure_filename(f))
 
 		with open(os.path.join(app.config['UPLOAD_FOLDER'], self.path), 'w') as file_csv:
 			file_csv.write(csv_string)
@@ -244,6 +259,7 @@ class druid2cattle:
 
 		cattlelog.debug("File {} uploaded successfully".format(os.path.join(app.config['UPLOAD_FOLDER'], self.path)))
 		cattlelog.debug("File {} uploaded successfully".format(os.path.join(app.config['UPLOAD_FOLDER'], self.path + '-metadata.json')))
+		return True
 
 	def build_graph(self):
 		COW(mode='convert', files=[os.path.join(app.config['UPLOAD_FOLDER'], self.path)])
@@ -273,7 +289,8 @@ class druid2cattle:
 		for f in candidates.keys():
 
 			# Download
-			self.download_pair(f, candidates[f])
+			if not self.download_pair(f, candidates[f]):
+				continue
 
 			# Convert
 			graph = self.build_graph()
