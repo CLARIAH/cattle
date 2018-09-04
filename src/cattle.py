@@ -364,9 +364,9 @@ def druid(username, dataset):
 	# if only a csv is present a json will be created for it.
 	cattlelog.debug("Starting Druid-based conversion")
 
-	print("<<<<information from the webhook:")
-	print(request.json)
-	print("end of imformation from the webhook.>>>>")
+	cattlelog.debug("<<<<information from the webhook:")
+	cattlelog.debug(request.json)
+	cattlelog.debug("end of imformation from the webhook.>>>>")
 
 	# upload_cleanup()
 	resp = make_response()
