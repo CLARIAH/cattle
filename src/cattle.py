@@ -182,7 +182,11 @@ def convert():
 		except IOError:
 			raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
 		if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
-			if request.form.get('zip'): #Requested compressed download
+			if request.form.get('turtle'):
+				resp = make_response(g.serialize(format='turtle'))
+				resp.headers['Content-Type'] = 'application/turtle'
+				resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.ttl'
+			elif request.form.get('zip'): #Requested compressed download
 				out = StringIO.StringIO()
 				with gzip.GzipFile(fileobj=out, mode="w") as f:
 				  f.write(g.serialize(format='application/n-quads'))
