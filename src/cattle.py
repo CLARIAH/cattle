@@ -251,8 +251,8 @@ class druid2cattle:
 		json_string = requests.get(pair[1]).text
 		self.path = os.path.join(make_hash_folder_druid(csv_string, self.username, self.dataset, json_string))
 
-		if self.check_for_concurrency():
-			return False
+		# if self.check_for_concurrency(): #disabled, because it should be called somewhere else!
+		# 	return False
 
 		self.path = os.path.join(self.path, secure_filename(f))
 
@@ -283,6 +283,9 @@ class druid2cattle:
 			gzip_file.write(graph.serialize(format='application/n-quads'))
 
 		cattlelog.debug("user: {} dataset: {} file: {}".format(self.username, self.dataset, out))
+
+		print(AUTH_TOKEN)
+
 		# using triply's uploadFiles client
 		subprocess.Popen(args=["./uploadScripts/node_modules/.bin/uploadFiles", "-t", AUTH_TOKEN, "-d", self.dataset, "-a", self.username, "-u", "https://api.druid.datalegend.net",  out])
 		cattlelog.debug("Upload to Druid started..")
