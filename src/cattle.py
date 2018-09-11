@@ -83,6 +83,10 @@ def make_hash_folder_druid(csv_string, username, dataset, json_string=""):
 		cattlelog.debug("This folder already exists, this might result in concurrency problems.")
 	return os.path.join(username, dataset, hash_folder_name)
 
+def make_hash_path_druid(csv_string, username, dataset, json_string=""):
+	hash_folder_name = create_hash(csv_string, json_string, False)
+	return os.path.join(username, dataset, hash_folder_name)
+
 # Routes
 
 @app.route('/', methods=['GET', 'POST'])
@@ -249,10 +253,12 @@ class druid2cattle:
 	def download_pair(self, f, pair):
 		csv_string = requests.get(pair[0]).text
 		json_string = requests.get(pair[1]).text
-		self.path = os.path.join(make_hash_folder_druid(csv_string, self.username, self.dataset, json_string))
+		self.path = make_hash_path_druid(csv_string, self.username, self.dataset, json_string)
 
 		# if self.check_for_concurrency(): #disabled, because it should be called somewhere else!
 		# 	return False
+
+		make_hash_folder_druid(csv_string, self.username, self.dataset, json_string)
 
 		self.path = os.path.join(self.path, secure_filename(f))
 
@@ -284,7 +290,7 @@ class druid2cattle:
 
 		cattlelog.debug("user: {} dataset: {} file: {}".format(self.username, self.dataset, out))
 
-		print(AUTH_TOKEN)
+		cattlelog.debug(AUTH_TOKEN)
 
 		# using triply's uploadFiles client
 		subprocess.Popen(args=["./uploadScripts/node_modules/.bin/uploadFiles", "-t", AUTH_TOKEN, "-d", self.dataset, "-a", self.username, "-u", "https://api.druid.datalegend.net",  out])
