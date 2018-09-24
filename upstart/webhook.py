@@ -9,6 +9,7 @@ app = Flask(__name__)
 def update():
     print "Starting image update"
     call(['docker', 'pull', 'clariah/cattle:dev'])
+    print "Restarting image"
     call(['docker-compose', '-f', '/home/clariah-sdh/src/cattle-dev/docker-compose.default.yml', 'restart'])
     print "All done; exiting..."
 
