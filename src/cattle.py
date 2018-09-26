@@ -401,6 +401,7 @@ def druid(username, dataset):
 			cattlelog.debug("Waiting for possible json-files.")
 			sleep(10) #wait for possible json files to be uploaded.
 	except:
+		pass
 
 	# cattlelog.debug(request.json)
 	# cattlelog.debug("end of imformation from the webhook.>>>>")
