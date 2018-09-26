@@ -241,11 +241,15 @@ class druid2cattle:
 	#returns True if the hash folder already exists and has been modified in the last 60 seconds.
 	def check_for_concurrency(self):
 		csv_path = os.path.join(app.config['UPLOAD_FOLDER'], self.path)
-		if os.path.exists(csv_path) and (time() - os.path.getmtime(csv_path) < 60):
-			cattlelog.debug("The hash folder has been modified in the last " + str(time() - os.path.getmtime(csv_path)) + " seconds, so we will wait.")
-			return True
+		if os.path.exists(csv_path):
+			if (time() - os.path.getmtime(csv_path) < 60):
+				cattlelog.debug("The hash folder has been modified in the last " + str(time() - os.path.getmtime(csv_path)) + " seconds, so we will wait.")
+				return True
+			else:
+				cattlelog.debug("\nNope, no concurrency problem I can smell.\n"+str(time() - os.path.getmtime(csv_path) < 60)+"\n")
+				return False
 		else:
-			cattlelog.debug("\nNope, no concurrency problem I can smell.\n"+str(time() - os.path.getmtime(csv_path) < 60)+"\n")
+			cattlelog.debug("\nNope, no folder exists, so no problem.")
 			return False
 
 	#downloads the csv json file pair from druid, returns False if the hash folder has been modified in the last 60 seconds,
@@ -255,8 +259,8 @@ class druid2cattle:
 		json_string = requests.get(pair[1]).text
 		self.path = make_hash_path_druid(csv_string, self.username, self.dataset, json_string)
 
-		# if self.check_for_concurrency(): #disabled, because it should be called somewhere else!
-		# 	return False
+		if self.check_for_concurrency(): #disabled, because it should be called somewhere else!
+			return False
 
 		make_hash_folder_druid(csv_string, self.username, self.dataset, json_string)
 
@@ -296,6 +300,17 @@ class druid2cattle:
 		subprocess.Popen(args=["./uploadScripts/node_modules/.bin/uploadFiles", "-t", AUTH_TOKEN, "-d", self.dataset, "-a", self.username, "-u", "https://api.druid.datalegend.net",  out])
 		cattlelog.debug("Upload to Druid started..")
 
+	def remove_files(self):
+		csv_path = os.path.join(app.config['UPLOAD_FOLDER'], self.path)
+		json_path = os.path.join(app.config['UPLOAD_FOLDER'], self.path + '-metadata.json')
+
+		cattlelog.debug('Removing the csv file and json file...')
+
+		os.remove(csv_path)
+		os.remove(json_path)
+
+		cattlelog.debug('Finished removing the csv file and json file.')
+
 	def handle_pairs(self, candidates):
 		# if .csv and .json pairs are present int the assets, downloads them, converts them, uploads results
 		cattlelog.debug('Downloading and converting: {}'.format(candidates.keys()))
@@ -319,6 +334,8 @@ class druid2cattle:
 
 			# Upload
 			self.upload_graph(graph)
+
+			self.remove_files()
 
 	def download_single(self, f, candidate):
 		# Downloads the csv
@@ -352,7 +369,7 @@ class druid2cattle:
 	# during the process checks will determine whether the json counterpart still isn't uploaded, if it is found it will stop
 	def handle_singles(self, candidates):
 		cattlelog.debug("Waiting for possible json-files.")
-		sleep(10) #wait for possible json files to be uploaded.
+		# sleep(10) #wait for possible json files to be uploaded. #waiting here is too late
 		cattlelog.debug("Starting with the single csv-files.")
 		for f in candidates.keys():
 			cattlelog.debug("handling single: " + f)
@@ -377,9 +394,16 @@ def druid(username, dataset):
 	# if only a csv is present a json will be created for it.
 	cattlelog.debug("Starting Druid-based conversion")
 
-	cattlelog.debug("<<<<information from the webhook:")
-	cattlelog.debug(request.json)
-	cattlelog.debug("end of imformation from the webhook.>>>>")
+	# cattlelog.debug("<<<<information from the webhook:")
+	try:
+		request_json = request.json
+		if request.json['assets'][0]['assetName'].endswith('.csv'):
+			cattlelog.debug("Waiting for possible json-files.")
+			sleep(10) #wait for possible json files to be uploaded.
+	except:
+
+	# cattlelog.debug(request.json)
+	# cattlelog.debug("end of imformation from the webhook.>>>>")
 
 	# upload_cleanup()
 	resp = make_response()
