@@ -294,8 +294,6 @@ class druid2cattle:
 
 		cattlelog.debug("user: {} dataset: {} file: {}".format(self.username, self.dataset, out))
 
-		cattlelog.debug(AUTH_TOKEN)
-
 		# using triply's uploadFiles client
 		subprocess.Popen(args=["./uploadScripts/node_modules/.bin/uploadFiles", "-t", AUTH_TOKEN, "-d", self.dataset, "-a", self.username, "-u", "https://api.druid.datalegend.net",  out])
 		cattlelog.debug("Upload to Druid started..")
@@ -314,6 +312,7 @@ class druid2cattle:
 	def handle_pairs(self, candidates):
 		# if .csv and .json pairs are present int the assets, downloads them, converts them, uploads results
 		cattlelog.debug('Downloading and converting: {}'.format(candidates.keys()))
+		successes = []
 		for f in candidates.keys():
 
 			# Download
@@ -334,8 +333,9 @@ class druid2cattle:
 
 			# Upload
 			self.upload_graph(graph)
-
 			self.remove_files()
+			successes.add(f)
+		return successes
 
 	def download_single(self, f, candidate):
 		# Downloads the csv
@@ -371,6 +371,7 @@ class druid2cattle:
 		cattlelog.debug("Waiting for possible json-files.")
 		# sleep(10) #wait for possible json files to be uploaded. #waiting here is too late
 		cattlelog.debug("Starting with the single csv-files.")
+		successes = []
 		for f in candidates.keys():
 			cattlelog.debug("handling single: " + f)
 			self.download_single(f, candidates[f])
@@ -386,6 +387,8 @@ class druid2cattle:
 				cattlelog.debug("Stopped because a new json was found.")
 				continue
 			self.upload_graph(graph)
+			successes.add(f)
+		return successes
 
 
 @app.route('/druid/<username>/<dataset>', methods=['POST'])
@@ -413,10 +416,19 @@ def druid(username, dataset):
 
 	candidates, singles = d2c.get_candidates()
 
+	successes = []
 	if len(candidates.keys()) > 0:
-		d2c.handle_pairs(candidates)
+		successes += d2c.handle_pairs(candidates)
 	if len(singles.keys()) > 0:
-		d2c.handle_singles(singles)
+		successes += d2c.handle_singles(singles)
+
+	try:
+		email_adress = request.json['user']['email']
+		cattlelog.debug("information needed for the email!")
+		cattlelog.debug(email_adress)
+		cattlelog.debug(successes)
+	except:
+		pass
 
 	return resp, 200
 
