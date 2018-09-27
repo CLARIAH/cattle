@@ -58,18 +58,18 @@ def check_dataset(org, dataset):
 	dataset_url = "https://api.druid.datalegend.net/datasets/{}/{}/assets".format(org, dataset)
 	files_json = requests.get(dataset_url).json()
 
-	print(files_json)
+	# print(files_json)
 
 	files = []
 	for file_i in range(0, len(files_json)):
 		files.append(files_json[file_i]["assetName"])
-	print(files)
+	# print(files)
 	return files
 
 #starts the druid interface of cattle in the specified dataset
 def call_cattle(org, dataset):
 	cattle_url = "http://cattle.datalegend.net/druid/{}/{}".format(org, dataset)
-	print("calling Cattle for {}".format(cattle_url))
+	cattlelog.debug("calling Cattle for {}".format(cattle_url))
 	requests.post(cattle_url)
 
 #check if the datasets without webhooks are still empty
@@ -91,7 +91,7 @@ def add_hook_to_dataset(org, dataset, API_token):
 	druid_url = 'https://api.druid.datalegend.net/datasets/{}/{}/hooks/'.format(org, dataset)
 
 	requests.post(druid_url, data=payload, headers=header)
-	print("succesfully added a new webhook to \"{}\"".format(dataset))
+	cattlelog.debug("succesfully added a new webhook to \"{}\"".format(dataset))
 
 def add_hook_to_datasets(datasets_dict, API_token):
 	for org in datasets_dict.keys():
@@ -101,7 +101,7 @@ def add_hook_to_datasets(datasets_dict, API_token):
 #main function
 def update_webhooks(username, API_token):
 	orgs = orgs_of_user(username)
-	print("found {} organizations where {} is a member.".format(len(orgs), username))
+	cattlelog.debug("found {} organizations where {} is a member.".format(len(orgs), username))
 	datasets_dict = datasets_of_orgs(orgs)
 	datasets_dict = remove_hooked(datasets_dict, API_token)
 	check_datasets(datasets_dict)
@@ -114,10 +114,7 @@ if __name__ == '__main__':
 	parser.add_argument('--API_token', dest='API_token', default=None, type=str, help="The API token of the user")
 	args = parser.parse_args()
 
-	args.API_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ1bmtub3duIiwiaXNzIjoidHJpcGx5LmNjIiwianRpIjoiOTE0ZGFiMDgtNzgwMC00M2M3LThiNWItYTc2NDdjMjZlODdkIiwic2MiOnsiYWNjIjpbImEiXSwiZHMiOlsiYSJdLCJ1cyI6WyJhIl19LCJ1aWQiOiI1YTVlMTQ2YzEyNzRmZjAyNDk2NTJmZjMiLCJpYXQiOjE1MTYxMTUxNDV9.kDlrOwlHCE82pn5Jhpi3XMZq0ZG-d0TGYeO8u0JQY98"
-	args.username = "Cattle"
-
 	if args.username == None or args.API_token == None:
-		print("unauthorized access")
+		cattlelog.debug("unauthorized access")
 	else:
 		update_webhooks(args.username, args.API_token)
