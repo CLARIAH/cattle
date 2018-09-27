@@ -17,6 +17,7 @@ import shutil
 import traceback
 from hashlib import md5
 from time import sleep, time
+from updateWebhooks import update_webhooks
 
 # The Flask app
 app = Flask(__name__)
@@ -334,7 +335,7 @@ class druid2cattle:
 			# Upload
 			self.upload_graph(graph)
 			self.remove_files()
-			successes.add(f)
+			successes.append(f)
 		return successes
 
 	def download_single(self, f, candidate):
@@ -387,7 +388,7 @@ class druid2cattle:
 				cattlelog.debug("Stopped because a new json was found.")
 				continue
 			self.upload_graph(graph)
-			successes.add(f)
+			successes.append(f)
 		return successes
 
 
@@ -432,6 +433,9 @@ def druid(username, dataset):
 
 	return resp, 200
 
+@app.route('/webhook_shooter', methods=['GET', 'POST'])
+def webhook_shooter():
+	update_webhooks("Cattle", AUTH_TOKEN)
 
 # Error handlers
 
