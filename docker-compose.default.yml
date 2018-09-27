@@ -11,3 +11,4 @@ services:
      - USERMAP_GID=1000
      - USERMAP_UID=1000
      - AUTH_TOKEN=xxx
+     - MAILGUN_AUTH_TOKEN=yyy

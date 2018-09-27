@@ -18,6 +18,7 @@ import traceback
 from hashlib import md5
 from time import sleep, time
 from updateWebhooks import update_webhooks
+from mail_templates import send_new_graph_message
 
 # The Flask app
 app = Flask(__name__)
@@ -40,6 +41,7 @@ ACCEPTED_TYPES = ['application/ld+json',
 				  'application/ld+json; profile="http://www.w3.org/ns/activitystreams', 'turtle', 'json-ld', 'nquads']
 
 AUTH_TOKEN = "xxx"
+MAILGUN_AUTH_TOKEN = "yyy"
 
 # Util functions
 
@@ -425,9 +427,11 @@ def druid(username, dataset):
 
 	try:
 		email_adress = request.json['user']['email']
+		account_name = request.json['user']['accountName']
 		cattlelog.debug("information needed for the email!")
 		cattlelog.debug(email_adress)
 		cattlelog.debug(successes)
+		send_new_graph_message(email_adress, account_name, successes, MAILGUN_AUTH_TOKEN)
 	except:
 		pass
 
@@ -436,7 +440,7 @@ def druid(username, dataset):
 @app.route('/webhook_shooter', methods=['GET', 'POST'])
 def webhook_shooter():
 	update_webhooks("Cattle", AUTH_TOKEN)
-	return render_template('webhook.html')
+	# return render_template('webhook.html')
 
 # Error handlers
 
