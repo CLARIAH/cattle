@@ -436,6 +436,7 @@ def druid(username, dataset):
 @app.route('/webhook_shooter', methods=['GET', 'POST'])
 def webhook_shooter():
 	update_webhooks("Cattle", AUTH_TOKEN)
+	return render_template('webhook.html')
 
 # Error handlers
 
