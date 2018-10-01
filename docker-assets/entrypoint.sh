@@ -17,6 +17,11 @@ case ${1} in
     case ${1} in
       app:start)
         cd ${CATTLE_INSTALL_DIR}
+
+        ## Replace tokens in code
+        sed -i "s/xxx/${AUTH_TOKEN}/" src/cattle.py
+        sed -i "s/yyy/${MAILGUN_AUTH_TOKEN}/" src/cattle.py
+
         gunicorn -c src/gunicorn_config.py src.cattle:app
         # migrate_database
         # rm -rf /var/run/supervisor.sock
