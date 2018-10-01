@@ -69,7 +69,7 @@ def check_dataset(org, dataset):
 #starts the druid interface of cattle in the specified dataset
 def call_cattle(org, dataset):
 	cattle_url = "http://cattle.datalegend.net/druid/{}/{}".format(org, dataset)
-	cattlelog.debug("calling Cattle for {}".format(cattle_url))
+	print("calling Cattle for {}".format(cattle_url))
 	requests.post(cattle_url)
 
 #check if the datasets without webhooks are still empty
@@ -91,7 +91,7 @@ def add_hook_to_dataset(org, dataset, API_token):
 	druid_url = 'https://api.druid.datalegend.net/datasets/{}/{}/hooks/'.format(org, dataset)
 
 	requests.post(druid_url, data=payload, headers=header)
-	cattlelog.debug("succesfully added a new webhook to \"{}\"".format(dataset))
+	print("succesfully added a new webhook to \"{}\"".format(dataset))
 
 def add_hook_to_datasets(datasets_dict, API_token):
 	for org in datasets_dict.keys():
@@ -101,20 +101,20 @@ def add_hook_to_datasets(datasets_dict, API_token):
 #main function
 def update_webhooks(username, API_token):
 	orgs = orgs_of_user(username)
-	cattlelog.debug("found {} organizations where {} is a member.".format(len(orgs), username))
+	print("found {} organizations where {} is a member.".format(len(orgs), username))
 	datasets_dict = datasets_of_orgs(orgs)
 	datasets_dict = remove_hooked(datasets_dict, API_token)
 	check_datasets(datasets_dict)
 	add_hook_to_datasets(datasets_dict, API_token)
 
 
-if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description="")
-	parser.add_argument('--username', dest='username', default=None, type=str, help="An user that is a member of every organisation whose datasets will be updated with webhooks")
-	parser.add_argument('--API_token', dest='API_token', default=None, type=str, help="The API token of the user")
-	args = parser.parse_args()
+# if __name__ == '__main__':
+# 	parser = argparse.ArgumentParser(description="")
+# 	parser.add_argument('--username', dest='username', default=None, type=str, help="An user that is a member of every organisation whose datasets will be updated with webhooks")
+# 	parser.add_argument('--API_token', dest='API_token', default=None, type=str, help="The API token of the user")
+# 	args = parser.parse_args()
 
-	if args.username == None or args.API_token == None:
-		cattlelog.debug("unauthorized access")
-	else:
-		update_webhooks(args.username, args.API_token)
+# 	if args.username == None or args.API_token == None:
+# 		print("unauthorized access")
+# 	else:
+# 		update_webhooks(args.username, args.API_token)
