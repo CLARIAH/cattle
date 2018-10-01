@@ -4,8 +4,7 @@
 
 # from flask import Flask, request, render_template, make_response, redirect, jsonify
 from werkzeug.utils import secure_filename
-import logging
-import requests
+# import requests
 import os
 import subprocess
 import json
@@ -13,11 +12,10 @@ from rdflib import ConjunctiveGraph
 from cow_csvw.csvw_tool import COW
 # import StringIO
 import gzip
-import shutil
-import traceback
+# import shutil
+# import traceback
 from hashlib import md5
-from time import sleep, time
-# from updateWebhooks import update_webhooks
+from time import time
 from mail_templates import send_new_graph_message
 
 #create hash to use as folder to save the files
@@ -221,7 +219,6 @@ class druid2cattle:
 	# during the process checks will determine whether the json counterpart still isn't uploaded, if it is found it will stop
 	def handle_singles(self, candidates):
 		self.logger.debug("Waiting for possible json-files.")
-		# sleep(10) #wait for possible json files to be uploaded. #waiting here is too late
 		self.logger.debug("Starting with the single csv-files.")
 		successes = []
 		for f in candidates.keys():

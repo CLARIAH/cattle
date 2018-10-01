@@ -17,6 +17,7 @@ import shutil
 import traceback
 from hashlib import md5
 from time import sleep, time
+from updateWebhooks import update_webhooks
 
 from druid_integration import druid2cattle, make_hash_folder
 # from mail_templates import send_new_graph_message
@@ -227,7 +228,7 @@ def druid(username, dataset):
 
 @app.route('/webhook_shooter', methods=['GET', 'POST'])
 def webhook_shooter():
-# # 	# update_webhooks("Cattle", AUTH_TOKEN)
+	update_webhooks("Cattle", AUTH_TOKEN)
 	cattlelog.debug("Webhook_shooter was called!")
 	return render_template('webhook.html')
 # 	resp = make_response()
