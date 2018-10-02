@@ -86,18 +86,18 @@ def build():
 		cattlelog.error("No file part")
 		return resp, 400
 	file = request.files['csv']
-	if file.filename == '':
+	filename = secure_filename(file.filename)
+	if filename == '':
 		cattlelog.error('No selected file')
 		return resp, 400
-	if file and allowed_file(file.filename):
-		filename = secure_filename(file.filename)
+	if file and allowed_file(filename):
 		app.config['UPLOAD_FOLDER'] = make_hash_folder(app.config['UPLOAD_FOLDER'], file)
 
 		if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 		#   with open(os.path.join(app.config['UPLOAD_FOLDER'], filename)) as saved_file:
 		#        cattlelog.debug(saved_file.read())
-		cattlelog.debug("File {} uploaded successfully".format(os.path.join(app.config['UPLOAD_FOLDER'], file.filename)))
+		cattlelog.debug("File {} uploaded successfully".format(os.path.join(app.config['UPLOAD_FOLDER'], filename)))
 		cattlelog.debug("Running COW build")
 		# try:
 		#     ret = subprocess.check_output("cow_tool build {}".format(os.path.join(app.config['UPLOAD_FOLDER'], filename)), stderr=subprocess.STDOUT, shell=True)
@@ -105,9 +105,9 @@ def build():
 		#     cattlelog.error("COW returned error status: {}".format(e.output))
 		#     return make_response(e.output), 200
 
-		COW(mode='build', files=[os.path.join(app.config['UPLOAD_FOLDER'], file.filename)])
+		COW(mode='build', files=[os.path.join(app.config['UPLOAD_FOLDER'], filename)])
 		cattlelog.debug("Build finished")
-		with open(os.path.join(app.config['UPLOAD_FOLDER'], file.filename + '-metadata.json')) as json_file:
+		with open(os.path.join(app.config['UPLOAD_FOLDER'], filename + '-metadata.json')) as json_file:
 			json_schema = json.loads(json_file.read())
 		resp = make_response(jsonify(json_schema))
 	else:
@@ -128,26 +128,27 @@ def convert():
 		cattlelog.error("Expected a csv and a json file")
 		return resp, 400
 	file_csv = request.files['csv']
+	filename_csv = secure_filename(file_csv.filename)
 	file_json = request.files['json']
-	if file_csv.filename == '' or file_json.filename == '':
+	filename_json = secure_filename(file_json.filename)
+	if filename_csv == '' or filename_json == '':
 		cattlelog.error('No selected file; please send both csv and json file')
 		return resp, 400
-	if file_csv and file_json and allowed_file(file_csv.filename) and allowed_file(file_json.filename):
-		filename_csv = secure_filename(file_csv.filename)
+	if file_csv and file_json and allowed_file(filename_csv) and allowed_file(filename_json):
 		app.config['UPLOAD_FOLDER'] = make_hash_folder(app.config['UPLOAD_FOLDER'], file_csv, file_json)
 
 		if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)):
 			file_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv))
 		if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '-metadata.json')):
 			file_json.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '-metadata.json'))
-		cattlelog.debug("Files {} and {} uploaded successfully".format(file_csv.filename, file_json.filename))
+		cattlelog.debug("Files {} and {} uploaded successfully".format(filename_csv, filename_json))
 		cattlelog.debug("Running COW convert")
 		# try:
 		#     ret = subprocess.check_output("cow_tool convert {}".format(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)), stderr=subprocess.STDOUT, shell=True)
 		# except subprocess.CalledProcessError as e:
 		#     cattlelog.error("COW returned error status: {}".format(e.output))
 		#     return make_response(e.output), 200
-		COW(mode='convert', files=[os.path.join(app.config['UPLOAD_FOLDER'], file_csv.filename)])
+		COW(mode='convert', files=[os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)])
 		cattlelog.debug("Convert finished")
 		try:
 			with open(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq')) as nquads_file:
