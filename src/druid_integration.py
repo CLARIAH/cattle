@@ -30,7 +30,16 @@ def create_hash(csv_file, json_file, read_files=True):
 			csv_file.seek(0)
 			json_file.seek(0)
 	else:
-		m.update(csv_file + json_file)
+		n_intervals = 5.0 #if some illegal character disrupts the creation of the hash, a subset of the file is tried
+		i = n_intervals
+		while(i > 0):
+			try:
+				# print("creating a hash with {}% of the files..".format(100*(i/n_intervals)))
+				m.update(csv_file[:int(round(len(csv_file)*(i/n_intervals)))]+json_file[:int(round(len(json_file)*(i/n_intervals)))])
+				# print("succesfully created a hash with {}% of the files.".format(100*(i/n_intervals)))
+				break
+			except:
+				i -= 1
 	return m.hexdigest()
 
 def make_hash_folder(path, csv_file, json_file=None):
@@ -109,7 +118,7 @@ class druid2cattle:
 		json_string = self.requests.get(pair[1]).text
 		self.path = make_hash_path_druid(csv_string, self.username, self.dataset, json_string)
 
-		if self.check_for_concurrency(): #disabled, because it should be called somewhere else!
+		if self.check_for_concurrency():
 			return False
 
 		make_hash_folder_druid(csv_string, self.username, self.dataset, self.upload_folder, json_string)
@@ -172,15 +181,6 @@ class druid2cattle:
 			# Convert
 			graph = self.build_graph()
 
-			# Write StringIO to file
-			# with open ('/tmp/converted.nq.gz', 'w') as fd:    #
-			#     out.seek(0)                                   # commented because it error'ed here
-			#     shutil.copyfileobj(out, fd)                   #
-
-			# resp = make_response(out.getvalue())
-			# resp.headers['Content-Type'] = 'application/gzip'
-			# resp.headers['Content-Disposition'] = 'attachment; filename=' + f + '.nq.gz'
-
 			# Upload
 			self.upload_graph(graph)
 			self.remove_files()
@@ -197,14 +197,14 @@ class druid2cattle:
 
 		self.logger.debug("File {} uploaded successfully".format(os.path.join(self.upload_folder, self.path)))
 
+	# creates a json file for a csv using COW
 	def build_auto_json(self):
-		# creates a json file for a csv using COW
 		self.logger.debug("Running COW build")
 		COW(mode='build', files=[os.path.join(self.upload_folder, self.path)])
 		self.logger.debug("Build finished")
 
+	# Check if the json counterpart to a csv has been uploaded to the assets
 	def found_new_json(self, current_csv):
-		# Check if the json counterpart to a csv has been uploaded to the assets
 		self.logger.debug("Listing remote files in Druid for user {} dataset {}".format(self.username, self.dataset))
 		r = self.requests.get("https://api.druid.datalegend.net/datasets/{}/{}/assets".format(self.username, self.dataset))
 		files = json.loads(r.text)
@@ -216,7 +216,8 @@ class druid2cattle:
 			return False
 
 	# if .csv without json counterpart are present in the assets, downloads the csv, creates json, converts them, uploads results
-	# during the process checks will determine whether the json counterpart still isn't uploaded, if it is found it will stop
+	# during the process checks will determine whether the json counterpart still isn't uploaded, if it is found the function will skip
+	# that csv json pair
 	def handle_singles(self, candidates):
 		self.logger.debug("Waiting for possible json-files.")
 		self.logger.debug("Starting with the single csv-files.")
