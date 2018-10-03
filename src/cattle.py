@@ -20,7 +20,7 @@ from time import sleep, time
 from updateWebhooks import update_webhooks
 
 from druid_integration import druid2cattle, make_hash_folder
-# from mail_templates import send_new_graph_message
+from mail_templates import send_new_graph_message
 
 # The Flask app
 app = Flask(__name__)

@@ -17,9 +17,10 @@ import gzip
 from hashlib import md5
 from time import time
 from mail_templates import send_new_graph_message
+import codecs
 
 #create hash to use as folder to save the files
-def create_hash(csv_file, json_file, read_files=True):
+def create_hash(csv_file, json_file, read_files=True, logger=None):
 	m = md5()
 	if read_files:
 		if json_file == None:
@@ -40,6 +41,8 @@ def create_hash(csv_file, json_file, read_files=True):
 				break
 			except:
 				i -= 1
+		if logger != None:
+			logger.debug("succesfully created a hash with {}% of the files.".format(100*(i/n_intervals)))
 	return m.hexdigest()
 
 def make_hash_folder(path, csv_file, json_file=None):
@@ -52,8 +55,8 @@ def make_hash_folder(path, csv_file, json_file=None):
 		pass
 	return new_path
 
-def make_hash_folder_druid(csv_string, username, dataset, path, json_string=""):
-	hash_folder_name = create_hash(csv_string, json_string, False)
+def make_hash_folder_druid(csv_string, username, dataset, path, json_string="", logger=None):
+	hash_folder_name = create_hash(csv_string, json_string, False, logger)
 	try:
 		os.makedirs(os.path.join(path, username, dataset, hash_folder_name))
 	except:
@@ -114,20 +117,20 @@ class druid2cattle:
 	#downloads the csv json file pair from druid, returns False if the hash folder has been modified in the last 60 seconds,
 	#returns True otherwise.
 	def download_pair(self, f, pair):
-		csv_string = self.requests.get(pair[0]).text
-		json_string = self.requests.get(pair[1]).text
+		csv_string = self.requests.get(pair[0]).content
+		json_string = self.requests.get(pair[1]).content
 		self.path = make_hash_path_druid(csv_string, self.username, self.dataset, json_string)
 
 		if self.check_for_concurrency():
 			return False
 
-		make_hash_folder_druid(csv_string, self.username, self.dataset, self.upload_folder, json_string)
+		make_hash_folder_druid(csv_string, self.username, self.dataset, self.upload_folder, json_string, self.logger)
 
 		self.path = os.path.join(self.path, secure_filename(f))
 
-		with open(os.path.join(self.upload_folder, self.path), 'w') as file_csv:
+		with open(os.path.join(self.upload_folder, self.path), 'wb') as file_csv:
 			file_csv.write(csv_string)
-		with open(os.path.join(self.upload_folder, self.path + '-metadata.json'), 'w') as file_json:
+		with open(os.path.join(self.upload_folder, self.path + '-metadata.json'), 'wb') as file_json:
 			file_json.write(json_string)
 
 		self.logger.debug("File {} uploaded successfully".format(os.path.join(self.upload_folder, self.path)))
@@ -189,11 +192,16 @@ class druid2cattle:
 
 	def download_single(self, f, candidate):
 		# Downloads the csv
-		csv_string = self.requests.get(candidate).text
-		self.path = os.path.join(make_hash_folder_druid(csv_string, self.username, self.dataset, self.upload_folder), secure_filename(f))
+		csv_string = self.requests.get(candidate).content
+		self.path = os.path.join(make_hash_folder_druid(csv_string, self.username, self.dataset, self.upload_folder, "", self.logger), secure_filename(f))
 
-		with open(os.path.join(self.upload_folder, self.path), 'w') as file_csv:
+		# self.logger.debug("the file=== ", self.requests.get(candiate)
+
+		with open(os.path.join(self.upload_folder, self.path), 'wb') as file_csv:
+		# with codecs.open(os.path.join(self.upload_folder, self.path), 'w', encoding='utf-8') as file_csv:
 			file_csv.write(csv_string)
+
+		# self.requests.get(candidate).save(os.path.join(self.upload_folder, self.path))
 
 		self.logger.debug("File {} uploaded successfully".format(os.path.join(self.upload_folder, self.path)))
 
