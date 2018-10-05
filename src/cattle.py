@@ -220,8 +220,8 @@ def druid(username, dataset):
 		cattlelog.debug("information needed for the email!")
 		cattlelog.debug(email_adress)
 		cattlelog.debug(successes)
-		# if len(successes) > 0:
-		# 	send_new_graph_message(email_adress, account_name, successes, MAILGUN_AUTH_TOKEN)
+		if len(successes) > 0:
+			send_new_graph_message(email_adress, account_name, successes, MAILGUN_AUTH_TOKEN)
 	except:
 		pass
 

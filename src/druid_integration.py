@@ -195,13 +195,8 @@ class druid2cattle:
 		csv_string = self.requests.get(candidate).content
 		self.path = os.path.join(make_hash_folder_druid(csv_string, self.username, self.dataset, self.upload_folder, "", self.logger), secure_filename(f))
 
-		# self.logger.debug("the file=== ", self.requests.get(candiate)
-
 		with open(os.path.join(self.upload_folder, self.path), 'wb') as file_csv:
-		# with codecs.open(os.path.join(self.upload_folder, self.path), 'w', encoding='utf-8') as file_csv:
 			file_csv.write(csv_string)
-
-		# self.requests.get(candidate).save(os.path.join(self.upload_folder, self.path))
 
 		self.logger.debug("File {} uploaded successfully".format(os.path.join(self.upload_folder, self.path)))
 
@@ -245,5 +240,6 @@ class druid2cattle:
 				self.logger.debug("Stopped because a new json was found.")
 				continue
 			self.upload_graph(graph)
+			#still remove files?
 			successes.append(f)
 		return successes
