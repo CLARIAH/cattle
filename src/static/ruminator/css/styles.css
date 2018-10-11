@@ -1,0 +1,182 @@
+
+body {
+    margin: 0;
+    background-color: #E6E6E6;
+    padding: 0;
+    width: 100%;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #aaa;
+    font-size: 14px;
+}
+.right {
+    overflow-x: hidden;
+    position: absolute;
+    bottom: 0;
+    top: 0;
+    right: 0;
+    width: 40%;
+    min-width: 400px;
+    box-sizing: border-box;
+}
+#ruminatorjson{
+	position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    overflow: auto;
+}
+#ruminatorjson .CodeMirror {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    top: 0;
+    height: auto !important;
+    background: #fff;
+    font-family: 'm_1regular', monospace;
+    line-height: 1.5em;
+}
+.left {
+    overflow-x: hidden;
+    position: absolute;
+    bottom: 0;
+    top: 34px;
+    background-color: #fff;
+    left: 0;
+    width: 50%;
+    min-width: 400px;
+    box-sizing: border-box;
+}
+#ruminatorform{
+	position: absolute;
+    bottom: 0;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+}
+#ruminatorbuttons{
+	position: fixed;
+	left: 50%;
+	top: 0;
+	bottom: 0;
+	padding-top:70px;
+	padding-left: 30px;
+}
+h1 {
+    color: #A73911;
+    letter-spacing: -3px;
+    font-family: 'Lato', sans-serif;
+    font-size: 48px;
+    font-weight: 200;
+    margin-bottom: 0;
+}
+.tabs{
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 50%;
+	padding-left: 21px;
+}
+.tabs button{
+	border-radius: 0 0 0 0;
+	margin-left: 4px;
+	background-color: #D3B0A3;
+	color: #fff;
+}
+.tabs button.current{
+	background-color: #fff;
+	color: #D3B0A3;
+}
+.btn.active.focus, .btn.active:focus, .btn.focus, .btn:active.focus, .btn:active:focus, .btn:focus{
+	outline: none;
+}
+#to-dataset{
+}
+#to-columns{
+}
+.tabcontent{
+	display: none;
+	height: 100%;
+}
+#help{
+	display: block;
+}
+#expandbuttons{
+	text-align: right;
+	margin-bottom: 6px;
+	padding: 8px 25px 0 0;
+	color: #666
+}
+#expandbuttons a, #expandbuttons a:visited{
+	color: #666;
+}
+.column, .metadata{
+	margin-bottom: 6px;
+	padding: 8px 25px;
+	color: #666;
+}
+h3{
+	display: block;
+	padding: 2px 0 14px 0;
+	margin:0;
+	font-size: 16px;
+	clear: both;
+	cursor: pointer;
+}
+label{
+	font-weight: normal;
+}
+.regular-column{
+	background-color: #D3B0A3;
+}
+.virtual-column{
+	background-color: #FFD4C2;
+}
+.column .id{
+	font-family: courier;
+	overflow: hidden;
+	font-size: 12px;
+}
+.form-control{
+	padding: 2px;
+	height: auto;
+	margin-bottom: 6px;
+}
+.cowbutton{
+	margin-bottom: 50px;
+	display: block;
+}
+.column input, .column textarea, .column select{
+	font-size: 12px;
+	color: #666;
+}
+select[name="objecttype"]{
+	margin-bottom: 3px;
+}
+input[name="lang"]{
+	display: none;
+}
+.metadata{
+	background-color: #000;
+	color: #fff;
+}
+input.small{
+	width: 80px;
+	float: left;
+	margin-right: 16px;
+}
+.copycontainer{
+	display: none;
+}
+.addbarselect{
+	text-align: right;
+}
+.addvirtual, .addvirtual:visited, .delvirtual{
+	color: #fff;
+	display: block;
+	text-align: right;
+}
+.delvirtual, .delvirtual:visited{
+	color: #FC000D;
+}
