@@ -32,7 +32,8 @@
               <center>Enrich your data manually or
                 <a href="http://ruminator.datalegend.net" target="_blank">ruminate</a> it</center>
               <center>(instructions on how to edit this JSON can be found <a href="https://github.com/CLARIAH/COW/wiki" target="_blank">here</a>)</center>
-              <a href="http://ruminator.datalegend.net" target="_blank">
+              <!-- <a href="http://ruminator.datalegend.net" target="_blank"> -->
+              <a href="{{ url_for('ruminator') }}" target="_blank"> <!--maybe without the target, so it will open in the current tab-->
               <img src="{{url_for('.static', filename='img/cow-left.png')}}" style="margin:auto; width:5%;display:block; margin-top: 10px">
             </a>
           </p>

@@ -22,7 +22,7 @@ RUN apt-get update \
 COPY ./ ${CATTLE_INSTALL_DIR}
 
 COPY docker-assets/assets/build/ ${CATTLE_BUILD_DIR}/
-RUN bash ${CATTLE_BUILD_DIR}/install.sh
+RUN bash ${CATTLE_BUILD_DIR}/install.sh && rm -rf /var/lib/apt/lists/*
 
 COPY docker-assets/assets/runtime/ ${CATTLE_RUNTIME_DIR}/
 COPY docker-assets/entrypoint.sh /sbin/entrypoint.sh

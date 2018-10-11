@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+		<head>
+				<meta charset="utf-8"/>
+				<title>COW - ruminator</title>
+
+				<script
+				src="https://code.jquery.com/jquery-3.1.1.min.js"
+				integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+				crossorigin="anonymous"></script>
+
+				<!-- BOOTSTRAP Latest compiled and minified CSS -->
+				<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+					integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"/>
+
+				<link href='//fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+
+				<!-- <link rel="stylesheet" href="/static/ruminator/css/styles.css" type="text/css"> -->
+				<link rel="stylesheet" href="{{url_for('.static', filename='ruminator/css/styles.css')}}" type="text/css">
+
+				<!-- <script src="codemirror-5.32.0/lib/codemirror.js"></script> -->
+				<!-- <link rel="stylesheet" href="codemirror-5.32.0/lib/codemirror.css"> -->
+				<!-- <script src="codemirror-5.32.0/mode/javascript/javascript.js"></script> -->
+				<!-- <script src="codemirror-5.32.0/addon/edit/matchbrackets.js"></script> -->
+				<!-- <script src="codemirror-5.32.0/addon/comment/continuecomment.js"></script> -->
+				<!-- <script src="codemirror-5.32.0/addon/comment/comment.js"></script> -->
+
+				<!-- <script type="text/javascript" src="js/ruminator.js"></script> -->
+				<script src="{{url_for('.static', filename='ruminator/codemirror-5.32.0/lib/codemirror.js')}}"></script>
+				<link rel="stylesheet" href="{{url_for('.static', filename='ruminator/codemirror-5.32.0/lib/codemirror.css')}}">
+				<!-- <link rel="stylesheet" href="/static/ruminator/codemirror-5.32.0/lib/codemirror.css"> -->
+				<script src="{{url_for('.static', filename='ruminator/codemirror-5.32.0/mode/javascript/javascript.js')}}"></script>
+				<script src="{{url_for('.static', filename='ruminator/codemirror-5.32.0/addon/edit/matchbrackets.js')}}"></script>
+				<script src="{{url_for('.static', filename='ruminator/codemirror-5.32.0/addon/comment/continuecomment.js')}}"></script>
+				<script src="{{url_for('.static', filename='ruminator/codemirror-5.32.0/addon/comment/comment.js')}}"></script>
+
+				<script>var jsonContents = '{{ json_contents | tojson }}';</script>
+
+				<script type="text/javascript" src="{{url_for('.static', filename='ruminator/js/ruminator.js')}}"></script>
+
+		</head>
+		<body>
+
+				
+
+			
+
+			<div class="scontainer">
+
+				<div class="right">
+					<div id="ruminatorjson">
+						<textarea id="cowjson" name="cowjson" class="form-control"></textarea>
+
+					</div>
+				</div>
+
+				<div class="left">
+					<div id="ruminatorform">
+							
+							<div class="tabcontent" id="dataset">dataset</div>
+
+							<div class="tabcontent" id="context">context</div>
+
+							<div class="tabcontent" id="columncontainer">
+								<div id="expandbuttons">
+									<a href="#" id="expand">expand all</a> | 
+									<a href="#" id="collapse">collapse all</a>
+								</div>
+								<div id="columns">
+								</div>
+							</div>
+
+							<div class="tabcontent" id="help">
+									<h1>Ruminator, why?</h1>
+
+
+									<h1>How to ruminate</h1>
+							</div>
+					</div>
+				</div>
+
+				<div class="tabs">
+						<button class="btn" id="to-dataset">dataset</button>
+						<button class="btn" id="to-context">context</button>
+						<button class="btn" id="to-columns">columns</button>
+						<button class="btn" id="to-help">?</button>
+				</div>
+
+				<div id="ruminatorbuttons">
+						<a class="cowbutton" href="#" id="left" title="read json into form">
+								<!-- <img style="width:70px;" src="img/cow-left-light.png" /> -->
+								<img style="width:70px;" src="{{url_for('.static', filename='ruminator/img/cow-left-light.png')}}" />
+						</a>
+
+						<a class="cowbutton" href="#" id="right" title="create json from form">
+								<!-- <img style="width:70px;" src="img/cow-right-light.png" /> -->
+								<img style="width:70px;" src="{{url_for('.static', filename='ruminator/img/cow-right-light.png')}}" />
+						</a>
+
+						<a class="cowbutton" href="#" id="save" title="save json to file">
+								<!-- <img style="width:70px;" src="img/cow-save.png" /> -->
+								<img style="width:70px;" src="{{url_for('.static', filename='ruminator/img/cow-save.png')}}" />
+						</a>
+						
+				</div>
+
+			</div>
+
+				
+
+			<div id="reg-col-template" class="copycontainer">
+				<div class="cc">
+					<h3>Name</h3>
+					<div class="columncontent">
+						<select class="form-control attribute" name="datatype">
+							<option value="">no datatype</option>
+							<option>xsd:string</option>
+							<option>xsd:decimal</option>
+							<option>xsd:float</option>
+							<option>xsd:integer</option>
+							<option>xsd:gYear</option>
+						</select>
+
+						<input class="form-control attribute" type="text" name="lang" value="" placeholder="language, e.g. 'en', 'nl' - only needed when datatype is string" />
+						
+						<textarea class="form-control attribute" name="dc:description" placeholder="description"></textarea>
+
+						predicate / propertyUrl <br />
+						<input class="form-control attribute" type="text" name="propertyUrl" value="" placeholder="propertyUrl" />
+						
+						object / valueUrl<br />
+						<input class="form-control attribute" type="text" name="valueUrl" value="" placeholder="valueUrl" />
+						
+						<input type="hidden" name="jsondata" value="" />
+
+						<a href="#" class="addvirtual">add virtual column</a>
+					</div>
+				</div>
+			</div>
+			<div id="vir-col-template" class="copycontainer">
+				<div class="cc">
+					<h3>Virtual Column</h3>
+					
+					<div class="columncontent">
+						<select class="form-control attribute" name="datatype">
+							<option value="">no datatype</option>
+							<option>xsd:string</option>
+							<option>xsd:decimal</option>
+							<option>xsd:float</option>
+							<option>xsd:integer</option>
+							<option>xsd:gYear</option>
+						</select>
+
+						<input class="form-control attribute" type="text" name="lang" value="" placeholder="language, e.g. 'en', 'nl' - only needed when datatype is string" />
+						
+						<textarea class="form-control attribute" name="dc:description" placeholder="description"></textarea>
+
+						subject / aboutUrl<br />
+						<input class="form-control attribute" type="text" name="aboutUrl" value="" placeholder="aboutUrl" />
+						
+						predicate / propertyUrl<br />
+						<input class="form-control attribute" type="text" name="propertyUrl" value="" placeholder="propertyUrl" />
+						
+						object / 
+						<select name="objecttype">
+							<option>valueUrl</option>
+							<option>csvw:value</option>
+						</select>
+
+						<input class="form-control attribute" type="text" name="valueUrl" value="" placeholder="valueUrl" />
+						<input class="form-control attribute" type="text" name="csvw:value" value="" placeholder="csvw:value" />
+						
+						<input type="hidden" name="jsondata" value='{"virtual":true}' />
+
+						<a href="#" class="delvirtual">delete column</a>
+
+					</div>
+				</div>
+			</div>
+
+			
+
+			<!-- BOOTSTRAP Latest compiled and minified JavaScript -->
+			<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+			integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+			crossorigin="anonymous"></script>        
+		</body>
+</html>

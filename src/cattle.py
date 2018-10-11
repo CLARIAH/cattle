@@ -18,6 +18,8 @@ import traceback
 from hashlib import md5
 from time import sleep, time
 from updateWebhooks import update_webhooks
+from string import ascii_uppercase, digits
+import random
 
 from druid_integration import druid2cattle, make_hash_folder
 from mail_templates import send_new_graph_message
@@ -54,6 +56,30 @@ def allowed_file(filename):
 	return '.' in filename and \
 		   filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def create_random_id(size=10):
+	chars = ascii_uppercase + digits
+	return ''.join(random.choice(chars) for _ in range(size))
+
+# create cookie for this specific user
+# in order to distinquish different json files that originated the same csv file.
+def create_user_cookie():
+	if 'user_location' in session:
+		cattlelog.debug('a file_location is already available %s' % session['user_location'])
+	else: #TODO: check if the random id already exists?
+		session['user_location'] = create_random_id()
+
+# create cookie for this json file
+def create_json_loc_cookie(json_loc):
+	if 'file_location' in session:
+		cattlelog.debug("deleting the old file_location...")
+		session.pop('username', None)
+	else:
+		cattlelog.debug("No previous file_location was found.")
+	cattlelog.debug("creating a new file_location...")
+	session['file_location'] = json_loc
+	cattlelog.debug("a new file_location has been created: {}".format(session['file_location']))
+	# return session['file_location'] #unnecesary
+
 # def upload_cleanup(folder_name): #shouldn't be used anymore!
 # 	files = os.listdir(app.config['UPLOAD_FOLDER'])
 # 	for file in files:
@@ -81,6 +107,9 @@ def version():
 def build():
 	cattlelog.info("Received request to build schema")
 	cattlelog.debug("Headers: {}".format(request.headers))
+
+	create_user_cookie()
+	app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], session['user_location'])
 
 	# upload_cleanup()
 	resp = make_response()
@@ -112,6 +141,7 @@ def build():
 		cattlelog.debug("Build finished")
 		with open(os.path.join(app.config['UPLOAD_FOLDER'], filename + '-metadata.json')) as json_file:
 			json_schema = json.loads(json_file.read())
+		create_json_loc_cookie(os.path.join(app.config['UPLOAD_FOLDER'], filename + '-metadata.json'))
 		resp = make_response(jsonify(json_schema))
 	else:
 		cattlelog.error('No file supplied or wrong file type')
@@ -192,17 +222,13 @@ def druid(username, dataset):
 	# if only a csv is present a json will be created for it.
 	cattlelog.debug("Starting Druid-based conversion")
 
-	# cattlelog.debug("<<<<information from the webhook:")
 	try:
 		request_json = request.json
 		if request.json['assets'][0]['assetName'].endswith('.csv'):
-			cattlelog.debug("Waiting for possible json-files.")
+			cattlelog.debug("Waiting for possible json-files...")
 			sleep(10) #wait for possible json files to be uploaded.
 	except:
 		pass
-
-	# cattlelog.debug(request.json)
-	# cattlelog.debug("end of imformation from the webhook.>>>>")
 
 	# upload_cleanup()
 	resp = make_response()
@@ -220,13 +246,29 @@ def druid(username, dataset):
 	try:
 		email_address = request.json['user']['email']
 		account_name = request.json['user']['accountName']
-		cattlelog.debug("information needed for the email!")
-		cattlelog.debug(email_address)
-		cattlelog.debug(successes)
 		if len(successes) > 0:
 			send_new_graph_message(email_address, account_name, successes, MAILGUN_AUTH_TOKEN)
 	except:
 		pass
+
+	return resp, 200
+
+@app.route('/ruminator', methods=['GET', 'POST'])
+def ruminator():
+	if 'file_location' in session:
+		file_location = session['file_location']
+		with open(file_location) as json_file:
+			return render_template('ruminator.html', json_contents=json_file.read())
+	else:
+		return render_template('ruminator.html', file_location=0)
+
+@app.route('/save_json', methods=['POST'])
+def save_json():
+	jsdata = request.form['javascript_data']
+	with open(os.path.join("src",session['file_location']), 'w') as json_file:
+		json_file.write(jsdata)
+	cattlelog.debug("The json file has been altered and saved. :D")
+	resp = make_response()
 
 	return resp, 200
 
@@ -235,8 +277,6 @@ def webhook_shooter():
 	update_webhooks("Cattle", AUTH_TOKEN)
 	cattlelog.debug("Webhook_shooter was called!")
 	return render_template('webhook.html')
-# 	resp = make_response()
-# 	return resp
 
 # Error handlers
 
