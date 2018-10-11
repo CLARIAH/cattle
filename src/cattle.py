@@ -2,7 +2,7 @@
 
 # cattle: A Web service for COW
 
-from flask import Flask, request, render_template, make_response, redirect, jsonify
+from flask import Flask, request, render_template, make_response, redirect, jsonify, session
 from werkzeug.utils import secure_filename
 import logging
 import requests
@@ -44,6 +44,9 @@ ACCEPTED_TYPES = ['application/ld+json',
 
 AUTH_TOKEN = "xxx"
 MAILGUN_AUTH_TOKEN = "yyy"
+SECRET_SESSION_KEY = "zzz"
+app.secret_key = SECRET_SESSION_KEY
+ERROR_MAIL_ADDRESS = "xyxyxy"
 
 # Util functions
 
@@ -215,13 +218,13 @@ def druid(username, dataset):
 		successes += d2c.handle_singles(singles)
 
 	try:
-		email_adress = request.json['user']['email']
+		email_address = request.json['user']['email']
 		account_name = request.json['user']['accountName']
 		cattlelog.debug("information needed for the email!")
-		cattlelog.debug(email_adress)
+		cattlelog.debug(email_address)
 		cattlelog.debug(successes)
 		if len(successes) > 0:
-			send_new_graph_message(email_adress, account_name, successes, MAILGUN_AUTH_TOKEN)
+			send_new_graph_message(email_address, account_name, successes, MAILGUN_AUTH_TOKEN)
 	except:
 		pass
 
@@ -239,11 +242,11 @@ def webhook_shooter():
 
 @app.errorhandler(404)
 def pageNotFound(error):
-	return render_template('error.html', error_message="Page not found")
+	return render_template('error.html', error_message="Page not found", error_mail_address=ERROR_MAIL_ADDRESS)
 
 @app.errorhandler(500)
 def pageNotFound(error):
-	return render_template('error.html', error_message=error.message)
+	return render_template('error.html', error_message=error.message, error_mail_address=ERROR_MAIL_ADDRESS)
 
 if __name__ == '__main__':
 	app.run(port=8088, debug=False)
