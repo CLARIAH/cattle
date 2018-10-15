@@ -21,7 +21,6 @@ $(document).ready(function(){
 	});
 
 	$('#save').click(function(){
-		console.log("you want to save this?!");
 		saveJSON();
 	});
 
