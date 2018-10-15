@@ -46,7 +46,7 @@ ACCEPTED_TYPES = ['application/ld+json',
 
 AUTH_TOKEN = "xxx"
 MAILGUN_AUTH_TOKEN = "yyy"
-SECRET_SESSION_KEY = "zzz"
+SECRET_SESSION_KEY = b"zzz"
 app.secret_key = SECRET_SESSION_KEY
 ERROR_MAIL_ADDRESS = "xyxyxy"
 
