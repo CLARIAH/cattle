@@ -193,3 +193,12 @@ body {
 .lead {
   margin-top: 10px;
 }
+
+.btn-collapse {
+  border: 1px solid transparent;
+  background-color: #eee;
+}
+
+.btn-collapse:hover,.btn-collapse:focus {
+    border:1px solid #ccc;
+}

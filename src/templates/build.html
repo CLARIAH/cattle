@@ -1,0 +1,37 @@
+{% include 'header.html' %}
+
+			<div class="inner">
+				<!-- <p class="lead"> You reach an intersection, there are three paths you can chose...</p> -->
+
+
+				<p class="h4">Answers these questions to improve the scheme for your dataset.</p>
+
+				<div style="border:1px solid #ccc;">
+					<p class="lead">
+							<center>This is where the questions will be.</center>
+					</p>
+					<a class="btn btn-primary" style="margin-bottom: 20px" href="/convert" id="exit" title="exit">Submit answers</a>
+				</div>
+
+				<div style="margin-top: 30px; margin-bottom: 30px">
+				</div>
+
+				<p class="h4">Or edit the JSON manually with Ruminator.</p>
+
+				<div style="border:1px solid #ccc;">
+					<p class="lead">
+							<center>Start ruminating with: <a href="{{ url_for('ruminator') }}">{{currentFile}}</a> </center>
+							<center>(instructions on how to edit this JSON can be found <a href="https://github.com/CLARIAH/COW/wiki">here</a>)</center>
+							<!-- <a href="http://ruminator.datalegend.net" target="_blank"> -->
+							<a href="{{ url_for('ruminator') }}"> <!--maybe without the target, so it will open in the current tab-->
+							<img src="{{url_for('.static', filename='img/cow-left.png')}}" style="margin:auto; width:5%;display:block; margin-top: 10px">
+						</a>
+					</p>
+				</div>
+
+				<div style="margin-top: 30px; margin-bottom: 30px">
+				</div>
+
+			</div>
+
+{% include 'footer.html' %}

@@ -24,6 +24,10 @@ $(document).ready(function(){
 		saveJSON();
 	});
 
+	// $('#exit').click(function(){
+	// 	$.get();
+	// });	
+
 	$("#left img").hover(function(){
 		$(this).attr('src','../../static/ruminator/img/cow-left.png');
 	},
@@ -128,6 +132,12 @@ function saveJSON() {
 		javascript_data: editor.getValue()
 	});
 }
+
+// function showRight() {
+// 	console.log("remove left");
+// 	document.getElementById("left").style.width="10%";
+// 	document.getElementById("right").style.width="70%";
+// }
 
 // function getUrlVars() {
 // 	var vars = {};

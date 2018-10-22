@@ -15,7 +15,7 @@ body {
     top: 0;
     right: 0;
     width: 40%;
-    min-width: 400px;
+    /*min-width: 400px;*/
     box-sizing: border-box;
 }
 #ruminatorjson{
@@ -44,7 +44,7 @@ body {
     background-color: #fff;
     left: 0;
     width: 50%;
-    min-width: 400px;
+    /*min-width: 400px;*/
     box-sizing: border-box;
 }
 #ruminatorform{

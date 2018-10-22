@@ -21,6 +21,7 @@ chown ${CATTLE_USER}:${CATTLE_USER} ${CATTLE_HOME} -R
 
 pip install -r src/requirements.txt
 sudo pip install cow_csvw --upgrade
+pip install rdflib-jsonld
 
 # Druid uploadFile
 #curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -

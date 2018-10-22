@@ -44,6 +44,26 @@ ACCEPTED_TYPES = ['application/ld+json',
 				  'text/turtle',
 				  'application/ld+json; profile="http://www.w3.org/ns/activitystreams', 'turtle', 'json-ld', 'nquads']
 
+EXTENSION_DICT = {"n3": ".n3",
+	"nquads": ".nq",
+	"nt": ".nt",
+	"rdfxml": ".rdf",
+	"trig": ".trig",
+	"trix": ".xml",
+	"turtle": ".ttl",
+	"xml": ".rdf",
+	"ld+json": ".jsonld"}
+
+MIME_TYPE_DICT = {"n3": "text/n3",
+	"nquads": "application/n-quads",
+	"nt": "application/n-triples",
+	"rdfxml": "application/rdf+xml",
+	"trig": "application/trig",
+	"trix": "application/xml",
+	"turtle": "text/turtle",
+	"xml": "application/rdf+xml",
+	"ld+json": "application/ld+json"} 
+
 AUTH_TOKEN = "xxx"
 MAILGUN_AUTH_TOKEN = "yyy"
 SECRET_SESSION_KEY = b"zzz"
@@ -80,6 +100,8 @@ def create_json_loc_cookie(json_loc):
 	cattlelog.debug("a new file_location has been created: {}".format(session['file_location']))
 	# return session['file_location'] #unnecesary
 
+
+
 # Routes
 
 @app.route('/', methods=['GET', 'POST'])
@@ -104,7 +126,7 @@ def version():
 	return v
 
 @app.route('/build', methods=['POST'])
-def build():
+def build(internal=False):
 	cattlelog.info("Received request to build schema")
 	cattlelog.debug("Headers: {}".format(request.headers))
 
@@ -136,7 +158,11 @@ def build():
 			json_schema = json.loads(json_file.read())
 		create_json_loc_cookie(os.path.join(app.config['UPLOAD_FOLDER'], filename + '-metadata.json'))
 		# resp = make_response(jsonify(json_schema)) #no longer return the json (only to ruminator)
-		return cattle()
+		# return cattle()
+		if not internal:
+			return render_template('build.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
+		else:
+			return 0
 	else:
 		cattlelog.error('No file supplied or wrong file type')
 		return resp, 415
@@ -210,7 +236,10 @@ def convert_local():
 	cattlelog.info("Received request to convert files locally")
 	cattlelog.debug("Headers: {}".format(request.headers))
 
-	resp = make_response()
+	cattlelog.debug(request.form.get('formatSelect'))
+
+	# resp = make_response()
+	# return resp #remove!
 
 	filename_csv = os.path.basename(session['file_location'])[:-len('-metadata.json')]
 	filename_json = os.path.basename(session['file_location'])
@@ -227,21 +256,17 @@ def convert_local():
 		except IOError:
 			raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
 		if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
-			if request.form.get('turtle'):
-				resp = make_response(g.serialize(format='turtle'))
-				resp.headers['Content-Type'] = 'application/turtle'
-				resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.ttl'
-			elif request.form.get('zip'): #Requested compressed download
+			if request.form.get('zip'): #Requested compressed download
 				out = StringIO.StringIO()
 				with gzip.GzipFile(fileobj=out, mode="w") as f:
-				  f.write(g.serialize(format='application/n-quads'))
+				  f.write(g.serialize(format=request.form.get('formatSelect')))
 				resp = make_response(out.getvalue())
 				resp.headers['Content-Type'] = 'application/gzip'
-				resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq.gz'
+				resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + EXTENSION_DICT[request.form.get('formatSelect')] + '.gz'
 			else:
-				resp = make_response(g.serialize(format='application/n-quads'))
-				resp.headers['Content-Type'] = 'application/n-quads'
-				resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq'
+				resp = make_response(g.serialize(format=request.form.get('formatSelect')))
+				resp.headers['Content-Type'] = MIME_TYPE_DICT[request.form.get('formatSelect')]
+				resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + EXTENSION_DICT[request.form.get('formatSelect')]
 		elif request.headers['Accept'] in ACCEPTED_TYPES:
 			resp = make_response(g.serialize(format=request.headers['Accept']))
 			resp.headers['Content-Type'] = request.headers['Accept']
@@ -302,6 +327,15 @@ def save_json():
 	cattlelog.debug("The json file has been altered and saved. :D")
 	resp = make_response()
 	return resp, 200
+
+@app.route('/convert', methods=['GET', 'POST'])
+def convert():
+	return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
+
+@app.route('/build_convert', methods=['GET', 'POST'])
+def build_convert():
+	build(True)
+	return convert_local()
 
 # @app.route('/clean_session', methods=['GET', 'POST'])
 # def clean_session():

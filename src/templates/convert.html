@@ -1,0 +1,31 @@
+{% include 'header.html' %}
+
+
+
+<div class="inner">
+<!--img src="{{url_for('.static', filename='cattle_logo_01.png')}}" -->
+
+	<p class="h4">Convert Your JSON and CSV files into RDF</p>
+	{% include 'box_convert.html' %}
+
+	<div style="margin-top: 30px; margin-bottom: 30px">
+	</div>
+
+	<div style="border:1px solid #ccc;">
+	  <p class="lead">
+	      <center>or continue ruminating with: <a href="{{ url_for('ruminator') }}">{{currentFile}}</a> </center>
+	      <center>(instructions on how to edit this JSON can be found <a href="https://github.com/CLARIAH/COW/wiki" target="_blank">here</a>)</center>
+	      <!-- <a href="http://ruminator.datalegend.net" target="_blank"> -->
+	      <a href="{{ url_for('ruminator') }}"> <!--maybe without the target, so it will open in the current tab-->
+	      <img src="{{url_for('.static', filename='img/cow-left.png')}}" style="margin:auto; width:5%;display:block; margin-top: 10px">
+	    </a>
+	  </p>
+	</div>
+
+</div>
+
+<script>
+
+</script>
+
+{% include 'footer.html' %}
