@@ -52,7 +52,7 @@ EXTENSION_DICT = {"n3": ".n3",
 	"trix": ".xml",
 	"turtle": ".ttl",
 	"xml": ".rdf",
-	"ld+json": ".jsonld"}
+	"json-ld": ".jsonld"}
 
 MIME_TYPE_DICT = {"n3": "text/n3",
 	"nquads": "application/n-quads",
@@ -62,7 +62,7 @@ MIME_TYPE_DICT = {"n3": "text/n3",
 	"trix": "application/xml",
 	"turtle": "text/turtle",
 	"xml": "application/rdf+xml",
-	"ld+json": "application/ld+json"} 
+	"json-ld": "application/ld+json"} 
 
 AUTH_TOKEN = "xxx"
 MAILGUN_AUTH_TOKEN = "yyy"

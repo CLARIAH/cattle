@@ -2,38 +2,28 @@
 
 
 
-          <div class="inner">
-	    <!--img src="{{url_for('.static', filename='cattle_logo_01.png')}}" -->
-            <p class="lead"> <b>cattle</b> {{version}}, an instance of a <a href="https://github.com/CLARIAH/COW" target="_blank">COW</a> Web service.</p>
+<div class="inner">
+			<!--img src="{{url_for('.static', filename='cattle_logo_01.png')}}" -->
+	<p class="lead"> <b>cattle</b> {{version}}, an instance of a <a href="https://github.com/CLARIAH/COW" target="_blank">COW</a> Web service.</p>
 
-            <p class="h4">Step 1: JSON schema file generation</p>
+	<p class="h4">Step 1: JSON schema file generation</p>
 
 
-            {% include 'box_upload.html' %}
+	{% include 'box_upload.html' %}
 
-          <div style="margin-top: 30px; margin-bottom: 30px">
-          </div>
+	<div style="margin-top: 30px; margin-bottom: 30px">
+	</div>
+	{% if currentFile == "" %}
+		<!-- <center> No datasets are currently ready for conversion. </center> -->
+	{% else %}
 
-          <!-- <p class="h4">Step 2: enrich your JSON schema </p> -->
+		{% include 'box_ruminator.html' %}
 
-      {% if currentFile == "" %}
-        <!-- <center> No datasets are currently ready for conversion. </center> -->
-      {% else %}
-        <div style="border:1px solid #ccc;">
-          <p class="lead">
-              <center>or continue ruminating with: <a href="{{ url_for('ruminator') }}">{{currentFile}}</a> </center>
-              <center>(instructions on how to edit this JSON can be found <a href="https://github.com/CLARIAH/COW/wiki" target="_blank">here</a>)</center>
-              <!-- <a href="http://ruminator.datalegend.net" target="_blank"> -->
-              <a href="{{ url_for('ruminator') }}"> <!--maybe without the target, so it will open in the current tab-->
-              <img src="{{url_for('.static', filename='img/cow-left.png')}}" style="margin:auto; width:5%;display:block; margin-top: 10px">
-            </a>
-          </p>
-        </div>
+		<div style="margin-top: 30px; margin-bottom: 30px">
+		</div>
 
-        <div style="margin-top: 30px; margin-bottom: 30px">
-        </div>
+	{% endif %}
+</div>
 
-      </div>
-    {% endif %}
 
 {% include 'footer.html' %}
