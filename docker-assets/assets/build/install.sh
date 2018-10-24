@@ -19,9 +19,8 @@ passwd -d ${CATTLE_USER}
 cd ${CATTLE_INSTALL_DIR}
 chown ${CATTLE_USER}:${CATTLE_USER} ${CATTLE_HOME} -R
 
-pip install -r src/requirements.txt
 sudo pip install cow_csvw --upgrade
-pip install rdflib-jsonld
+pip install -r src/requirements.txt
 
 # Druid uploadFile
 #curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
