@@ -10,7 +10,7 @@ To understand this service please read the [COW](https://github.com/clariah/cow)
 
 The cattle web service provides the following options (in steps matching the COW 'logic'). You will need to run these commands from a term/shell (in Unix) or the command prompt in Windows.
 
-## Command line examples
+## API command line examples
 
 ### Step 1: build a metadata json file
 Build a metadata.json file containing the conversion script and save it as a file
