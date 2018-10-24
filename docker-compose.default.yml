@@ -2,12 +2,13 @@ version: '2'
 services:
   cattle:
     build: ./
-    image: clariah/cattle:latest
+    image: clariah/cattle:dev
     restart: unless-stopped
     ports:
-     - "8001:80"
+     - "8002:80"
     environment:
      - DEBUG=true
      - USERMAP_GID=1000
      - USERMAP_UID=1000
      - AUTH_TOKEN=xxx
+     - MAILGUN_AUTH_TOKEN=yyy
