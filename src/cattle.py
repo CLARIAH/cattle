@@ -20,6 +20,7 @@ from time import sleep, time
 from updateWebhooks import update_webhooks
 from string import ascii_uppercase, digits
 import random
+import io
 
 from druid_integration import druid2cattle, make_hash_folder
 from mail_templates import send_new_graph_message
@@ -325,7 +326,7 @@ def ruminator():
 @app.route('/save_json', methods=['POST'])
 def save_json():
 	jsdata = request.form['javascript_data']
-	with open(session['file_location'], 'w') as json_file:
+	with io.open(session['file_location'], 'w') as json_file:
 		json_file.write(jsdata)
 	cattlelog.debug("The json file has been altered and saved. :D")
 	resp = make_response()
