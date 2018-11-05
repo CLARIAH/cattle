@@ -92,7 +92,7 @@ def create_user_cookie():
 def create_json_loc_cookie(json_loc):
 	if 'file_location' in session:
 		cattlelog.debug("deleting the old file_location...")
-		session.pop('username', None)
+		clean_session()
 	else:
 		cattlelog.debug("No previous file_location was found.")
 	cattlelog.debug("creating a new file_location...")
@@ -100,6 +100,8 @@ def create_json_loc_cookie(json_loc):
 	cattlelog.debug("a new file_location has been created: {}".format(session['file_location']))
 	# return session['file_location'] #unnecesary
 
+def clean_session():
+	session.pop('file_location', None)
 
 
 # Routes
@@ -275,6 +277,7 @@ def convert_local():
 	else:
 		raise Exception('No files supplied, wrong file types, or unexpected file extensions')
 
+	clean_session()
 	return resp, 200
 
 @app.route('/druid/<username>/<dataset>', methods=['POST'])
@@ -336,10 +339,6 @@ def convert():
 def build_convert():
 	build(True)
 	return convert_local()
-
-# @app.route('/clean_session', methods=['GET', 'POST'])
-# def clean_session():
-	
 
 @app.route('/webhook_shooter', methods=['GET', 'POST'])
 def webhook_shooter():
