@@ -74,8 +74,7 @@ ERROR_MAIL_ADDRESS = "xyxyxy"
 # Util functions
 
 def allowed_file(filename):
-	return '.' in filename and \
-		   filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def create_random_id(size=10):
 	chars = ascii_uppercase + digits
@@ -85,7 +84,7 @@ def create_random_id(size=10):
 # in order to distinquish different json files that originated the same csv file.
 def create_user_cookie():
 	if 'user_location' in session:
-		cattlelog.debug('a file_location is already available %s' % session['user_location'])
+		cattlelog.debug('a user directory is already available %s' % session['user_location'])
 	else: #TODO: check if the random id already exists?
 		session['user_location'] = create_random_id()
 
@@ -104,6 +103,35 @@ def create_json_loc_cookie(json_loc):
 def clean_session():
 	session.pop('file_location', None)
 
+def upload_files():
+	cattlelog.info("Uploading csv and json files...")
+	create_user_cookie()
+	app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], session['user_location'])
+
+	if 'csv' in request.files and 'json' in request.files:
+		csv_file = request.files['csv']
+		json_file= request.files['json']
+		csv_filename = secure_filename(csv_file.filename)
+		json_filename = secure_filename(json_file.filename)
+
+		if csv_filename == '' or json_filename == '':
+			cattlelog.error('No selected file')
+			return 0
+
+		if csv_file and json_file and allowed_file(csv_filename) and allowed_file(json_filename):
+			app.config['UPLOAD_FOLDER'] = make_hash_folder(app.config['UPLOAD_FOLDER'], csv_file, json_file)
+
+			if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], csv_filename)):
+				csv_file.save(os.path.join(app.config['UPLOAD_FOLDER'], csv_filename))
+			if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], json_filename)):
+				json_file.save(os.path.join(app.config['UPLOAD_FOLDER'], json_filename))
+
+			cattlelog.debug("Files {} and {} uploaded successfully".format(os.path.join(app.config['UPLOAD_FOLDER'], csv_filename),os.path.join(app.config['UPLOAD_FOLDER'], json_filename)))
+	else:
+		return 0
+
+	create_json_loc_cookie(os.path.join(app.config['UPLOAD_FOLDER'], json_filename))
+	cattlelog.info("Upload complete.")
 
 # Routes
 
@@ -171,68 +199,6 @@ def build(internal=False):
 		return resp, 415
 
 	return resp, 200
-
-# @app.route('/convert', methods=['POST'])
-# def convert():
-# 	cattlelog.info("Received request to convert file")
-# 	cattlelog.debug("Headers: {}".format(request.headers))
-
-# 	# upload_cleanup()
-# 	resp = make_response()
-
-# 	if 'csv' not in request.files or 'json' not in request.files:
-# 		cattlelog.error("Expected a csv and a json file")
-# 		return resp, 400
-# 	file_csv = request.files['csv']
-# 	filename_csv = secure_filename(file_csv.filename)
-# 	file_json = request.files['json']
-# 	filename_json = secure_filename(file_json.filename)
-# 	if filename_csv == '' or filename_json == '':
-# 		cattlelog.error('No selected file; please send both csv and json file')
-# 		return resp, 400
-# 	if file_csv and file_json and allowed_file(filename_csv) and allowed_file(filename_json):
-# 		app.config['UPLOAD_FOLDER'] = make_hash_folder(app.config['UPLOAD_FOLDER'], file_csv, file_json)
-
-# 		if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)):
-# 			file_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv))
-# 		if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '-metadata.json')):
-# 			file_json.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '-metadata.json'))
-# 		cattlelog.debug("Files {} and {} uploaded successfully".format(filename_csv, filename_json))
-
-# 		cattlelog.debug("Running COW convert")
-# 		COW(mode='convert', files=[os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)])
-# 		cattlelog.debug("Convert finished")
-# 		try:
-# 			with open(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq')) as nquads_file:
-# 				g = ConjunctiveGraph()
-# 				g.parse(nquads_file, format='nquads')
-# 		except IOError:
-# 			raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
-# 		if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
-# 			if request.form.get('turtle'):
-# 				resp = make_response(g.serialize(format='turtle'))
-# 				resp.headers['Content-Type'] = 'application/turtle'
-# 				resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.ttl'
-# 			elif request.form.get('zip'): #Requested compressed download
-# 				out = StringIO.StringIO()
-# 				with gzip.GzipFile(fileobj=out, mode="w") as f:
-# 				  f.write(g.serialize(format='application/n-quads'))
-# 				resp = make_response(out.getvalue())
-# 				resp.headers['Content-Type'] = 'application/gzip'
-# 				resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq.gz'
-# 			else:
-# 				resp = make_response(g.serialize(format='application/n-quads'))
-# 				resp.headers['Content-Type'] = 'application/n-quads'
-# 				resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + '.nq'
-# 		elif request.headers['Accept'] in ACCEPTED_TYPES:
-# 			resp = make_response(g.serialize(format=request.headers['Accept']))
-# 			resp.headers['Content-Type'] = request.headers['Accept']
-# 		else:
-# 			return 'Requested format unavailable', 415
-# 	else:
-# 		raise Exception('No files supplied, wrong file types, or unexpected file extensions')
-
-# 	return resp, 200
 
 @app.route('/convert_local', methods=['POST'])
 def convert_local():
@@ -321,7 +287,7 @@ def ruminator():
 		with open(file_location) as json_file:
 			return render_template('ruminator.html', json_contents=json_file.read())
 	else:
-		return render_template('ruminator.html', file_location=0)
+		return render_template('ruminator.html', json_contents={})
 
 @app.route('/save_json', methods=['POST'])
 def save_json():
@@ -334,11 +300,20 @@ def save_json():
 
 @app.route('/convert', methods=['GET', 'POST'])
 def convert():
-	return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
+	if 'file_location' in session:
+		return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
+	else:
+		return render_template('convert.html', currentFile="")
 
 @app.route('/build_convert', methods=['GET', 'POST'])
 def build_convert():
-	build(True)
+	if 'json' not in request.files:
+		build(True)
+	else:
+		cattlelog.debug("found a json!:")
+		cattlelog.debug(request.files['json'])
+		upload_files()
+
 	return convert_local()
 
 @app.route('/webhook_shooter', methods=['GET', 'POST'])
