@@ -14,36 +14,39 @@
           <!-- Working on: {{currentFile}}<br /> -->
           <input type="submit" class="btn btn-primary" value="Convert" id="convertupload" formaction="/build_convert">
         <!-- </center> -->
-        <div align="right" style="padding:20pt">
-          <!-- <p> -->
-            <button class="btn-collapse" type="button" data-toggle="collapse" data-target="#collapseForm" aria-expanded="false" aria-controls="collapseForm" color="red">
+        <div align="right" style="padding:10pt">
+          <div style="display:inline-block; border:1px solid #ccc; padding:5pt" align="left">
+            <!-- <p> -->
+            <div align="right">
+              <button class="btn-collapse" type="button" data-toggle="collapse" data-target="#collapseForm" aria-expanded="true" aria-controls="collapseForm" color="red">
               Advanced features
-            </button>
-          <!-- </p> -->
-          <div class="collapse" id="collapseForm">
-            <div class="form-check">
-              <label class="form-check-label" for="zip">
-                Zip conversion result
-              </label>
-              <input class="form-check-input" type="checkbox" value="zip" id="zip" name="zip" checked>
-              <br />
+              </button>
             </div>
-            <label>
-            format:
-            </label> 
-            <select id="formatSelect" value="formatSelect" name="formatSelect">
-              <option value="n3">n3</option>
-              <option value="nquads" selected="selected">nquads</option>
-              <option value="nt">nt</option>
-              <option value="pretty-xml">pretty-xml</option>
-              <option value="trig">trig</option>
-              <option value="trix">trix</option>
-              <option value="turtle">turtle</option>
-              <option value="xml">xml</option>
-              <option value="json-ld">ld+json</option>
-            </select>
-            <label for="json">CSV file</label>
-            <center><input type="file" class="form-control-file" style="margin-bottom: 20px" name="json" id="json"></center>
+            <!-- </p> -->
+            <div class="collapse in" id="collapseForm" aria-expanded="true" style="">
+              <div class="form-check">
+                <label class="form-check-label" for="zip">
+                  Zip conversion result
+                </label>
+                <input class="form-check-input" type="checkbox" value="zip" id="zip" name="zip" checked="">
+                <br>
+              </div>
+              <label>
+              format:
+              </label> 
+              <select id="formatSelect" value="formatSelect" name="formatSelect">
+                <option value="n3">n3</option>
+                <option value="nquads" selected="selected">nquads</option>
+                <option value="nt">nt</option>
+                <option value="pretty-xml">pretty-xml</option>
+                <option value="trig">trig</option>
+                <option value="trix">trix</option>
+                <option value="turtle">turtle</option>
+                <option value="xml">xml</option>
+                <option value="json-ld">ld+json</option>
+              </select>
+              <br><label for="json">Manual JSON:</label><input type="file" class="form-control-file" name="json" id="json" text="json here">
+            </div>
           </div>
         </div>
       </div>
