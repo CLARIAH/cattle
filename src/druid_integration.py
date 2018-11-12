@@ -103,7 +103,7 @@ class druid2cattle:
 	#only return the candidate or single that corresponds with the basename of the file that
 	#triggered the webhook.
 	def select_candidate(self, candidates, singles, basename):
-		cattlelog.debug("received a hook for the file: {}".format(basename))
+		self.logger.debug("received a hook for the file: {}".format(basename))
 
 		new_candidates = {}
 		for found_asset in candidates.keys():
