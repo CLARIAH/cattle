@@ -100,6 +100,26 @@ class druid2cattle:
 
 		return duos, single_csv
 
+	#only return the candidate or single that corresponds with the basename of the file that
+	#triggered the webhook.
+	def select_candidate(self, candidates, singles, basename):
+		cattlelog.debug("received a hook for the file: {}".format(basename))
+
+		new_candidates = {}
+		for found_asset in candidates.keys():
+			if found_asset == basename:
+				new_candidates[found_asset] = candidates[found_asset]
+
+		new_singles = {}
+		for found_asset in singles.keys():
+			if found_asset == basename:
+				new_singles[found_asset] = singles[found_asset]
+
+		candidates = new_candidates
+		singles = new_singles
+		return candidates, singles
+
+
 	#returns True if the hash folder already exists and has been modified in the last 60 seconds.
 	def check_for_concurrency(self):
 		csv_path = os.path.join(self.upload_folder, self.path)

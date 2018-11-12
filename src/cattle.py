@@ -254,7 +254,6 @@ def druid(username, dataset):
 	cattlelog.debug("Starting Druid-based conversion")
 
 	try:
-		request_json = request.json
 		if request.json['assets'][0]['assetName'].endswith('.csv'):
 			cattlelog.debug("Waiting for possible json-files...")
 			sleep(10) #wait for possible json files to be uploaded.
@@ -265,6 +264,9 @@ def druid(username, dataset):
 
 	d2c = druid2cattle(username, dataset, cattlelog, app.config['UPLOAD_FOLDER'], requests, AUTH_TOKEN)
 	candidates, singles = d2c.get_candidates()
+
+	basename = request.json['assets'][0]['assetName'][:request.json['assets'][0]['assetName'].find(".csv")+4]
+	candidates, singles = d2c.select_candidate(candidates, singles, basename)
 
 	successes = []
 	if len(candidates.keys()) > 0:
