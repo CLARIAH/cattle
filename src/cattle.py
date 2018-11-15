@@ -262,6 +262,7 @@ def druid(username, dataset):
 
 	resp = make_response()
 
+	# cattlelog.debug("UPLOAD_FOLDER=== {}".format(app.config['UPLOAD_FOLDER']))
 	d2c = druid2cattle(username, dataset, cattlelog, app.config['UPLOAD_FOLDER'], requests, AUTH_TOKEN)
 	candidates, singles = d2c.get_candidates()
 

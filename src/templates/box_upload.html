@@ -1,9 +1,10 @@
 <div style="border:1px solid #ccc;">
 	<p class="lead">
-		<form method="post" enctype="multipart/form-data"><!--  action="/build_convert"> --><!--  target="_blank"> -->
+		<form method="post" enctype="multipart/form-data" data-toggle="validator"><!--  action="/build_convert"> --><!--  target="_blank"> -->
 			<div class="form-group">
 				<label for="csv">CSV file</label>
-				<center><input type="file" class="form-control-file" style="margin-bottom: 20px" name="csv" id="csv"></center>
+				<center><input type="file" class="form-control-file" name="csv" id="csv" data-filesize="1.5">
+				 <div class="help-block with-errors" style="margin-bottom: 20px"></div></center>
 				<input type="submit" class="btn btn-primary" value="Upload" id="schemaupload" formaction="/build">
 			<!-- </div> -->
 		<!-- </form> -->
@@ -64,5 +65,31 @@ $('#csv').change(function() {
 	$(this).val() ? $('#schemaupload').prop('disabled', false) : $('#schemaupload').prop('disabled', true);
 	$(this).val() ? $('#convertupload').prop('disabled', false) : $('#convertupload').prop('disabled', true);
 });
+
+$('form[data-toggle="validator"]').validator({
+  custom: {
+    filesize: function ($el) {
+      var maxBytes = $el.data('filesize') * 1024 * 1024;
+      console.log($el[0].files[0].size);
+      if ($el[0].files[0].size > maxBytes) {
+      	$('#schemaupload').prop('disabled', true);
+      	$('#convertupload').prop('disabled', true);
+        return "File must be smaller than " + $el.data('filesize') + " MB.";
+      }
+    }
+    
+    // //custom file type validation
+    // filetype: function ($el) {
+    //   var acceptableTypes = $el.prop('accept').split(',');
+    //   var fileType = $el[0].files[0].type;
+     
+    //   if (!$.inArray(fileType, acceptableTypes)) {
+    //     return "Invalid file type"
+    //   }
+    
+    
+    // }
+  }
+})
 
 </script>

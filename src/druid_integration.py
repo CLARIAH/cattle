@@ -124,7 +124,7 @@ class druid2cattle:
 	def check_for_concurrency(self):
 		csv_path = os.path.join(self.upload_folder, self.path)
 		if os.path.exists(csv_path):
-			if (time() - os.path.getmtime(csv_path) < 60):
+			if (time() - os.path.getmtime(csv_path) < 60): #hardcoded at 60 seconds.
 				self.logger.debug("The hash folder has been modified in the last " + str(time() - os.path.getmtime(csv_path)) + " seconds, so we will wait.")
 				return True
 			else:
