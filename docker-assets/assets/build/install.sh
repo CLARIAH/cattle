@@ -58,7 +58,7 @@ sudo apt-get install -y nodejs build-essential
 sudo npm install -g npm
 mkdir uploadScripts
 cd uploadScripts
-npm install @triply/client.js@1.0.7
+npm install @triply/client.js@1.0.12
 
 cd ${CATTLE_INSTALL_DIR}
 

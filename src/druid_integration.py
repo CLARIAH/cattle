@@ -177,7 +177,7 @@ class druid2cattle:
 		self.logger.debug("user: {} dataset: {} file: {}".format(self.username, self.dataset, out))
 
 		# using triply's uploadFiles client
-		subprocess.Popen(args=["./uploadScripts/node_modules/.bin/uploadFiles", "-t", self.token, "-d", self.dataset, "-a", self.username, "-u", "https://api.druid.datalegend.net",  out])
+		subprocess.Popen(args=["./uploadScripts/node_modules/.bin/uploadFiles", "-t", self.token, "-d", self.dataset, "-a", self.username, "-u", "https://api.druid.datalegend.net", "-p", out])
 		self.logger.debug("Upload to Druid started..")
 
 	def remove_files(self):
