@@ -201,13 +201,16 @@ class druid2cattle:
 			if not self.download_pair(f, candidates[f]):
 				continue
 
+			proc = subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username])
+			# proc = subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			
 			# Convert
-			graph = self.build_graph()
+			# graph = self.build_graph()
 
-			# Upload
-			self.upload_graph(graph)
-			self.remove_files()
-			successes.append(f)
+			# # Upload
+			# self.upload_graph(graph)
+			# self.remove_files()
+			# successes.append(f)
 		return successes
 
 	def download_single(self, f, candidate):
