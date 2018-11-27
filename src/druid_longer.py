@@ -1,7 +1,9 @@
 import os
 from cow_csvw.csvw_tool import COW
 from rdflib import ConjunctiveGraph
-import gzip	
+import gzip
+import argparse
+import subprocess
 
 def build_graph(path):
 	COW(mode='convert', files=[path])
@@ -48,7 +50,7 @@ if __name__ == '__main__':
 
 	graph = build_graph(args.path)
 
-	# upload_graph(args.path, graph)
+	upload_graph(args.path, graph, args.token, args.dataset, args.username)
 
-	# remove_files(args.path)
+	remove_files(args.path)
 

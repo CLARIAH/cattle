@@ -200,9 +200,8 @@ class druid2cattle:
 			# Download
 			if not self.download_pair(f, candidates[f]):
 				continue
-
-			proc = subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username])
-			# proc = subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			# proc = subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username])
+			subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 			
 			# Convert
 			# graph = self.build_graph()
@@ -258,11 +257,12 @@ class druid2cattle:
 			if self.found_new_json(f):
 				self.logger.debug("Stopped because a new json was found.")
 				continue
-			graph = self.build_graph()
-			if self.found_new_json(f):
-				self.logger.debug("Stopped because a new json was found.")
-				continue
-			self.upload_graph(graph)
-			#still remove files?
-			successes.append(f)
+			subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			# graph = self.build_graph()
+			# if self.found_new_json(f):
+			# 	self.logger.debug("Stopped because a new json was found.")
+			# 	continue
+			# self.upload_graph(graph)
+			# #still remove files?
+			# successes.append(f)
 		return successes
