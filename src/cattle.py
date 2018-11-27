@@ -24,14 +24,15 @@ import io
 
 from druid_integration import druid2cattle, make_hash_folder
 from mail_templates import send_new_graph_message
+from druid_longer import remove_files
 
 # The Flask app
 app = Flask(__name__)
 
 # Uploading
-UPLOAD_FOLDER = '/tmp'
+UPLOAD_FOLDER_BASE = '/tmp'
 ALLOWED_EXTENSIONS = set(['csv', 'json'])
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 
 # Logging
 LOG_FORMAT = '%(asctime)-15s [%(levelname)s] (%(module)s.%(funcName)s) %(message)s'
@@ -102,6 +103,7 @@ def create_json_loc_cookie(json_loc):
 
 def clean_session():
 	session.pop('file_location', None)
+	app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 
 def upload_files():
 	cattlelog.info("Uploading csv and json files...")
@@ -244,6 +246,7 @@ def convert_local():
 	else:
 		raise Exception('No files supplied, wrong file types, or unexpected file extensions')
 
+	remove_files(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv))
 	clean_session()
 	return resp, 200
 
