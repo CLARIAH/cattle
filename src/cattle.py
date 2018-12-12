@@ -25,6 +25,7 @@ import io
 from druid_integration import druid2cattle, make_hash_folder
 from mail_templates import send_new_graph_message
 from druid_longer import remove_files
+import info_log
 
 # The Flask app
 app = Flask(__name__)
@@ -179,9 +180,10 @@ def build(internal=False):
 	if file and allowed_file(filename):
 		app.config['UPLOAD_FOLDER'] = make_hash_folder(app.config['UPLOAD_FOLDER'], file)
 
+		infolog = info_log.info_log(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+		infolog.job_start("build")
 		if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
 		cattlelog.debug("File {} uploaded successfully".format(os.path.join(app.config['UPLOAD_FOLDER'], filename)))
 		
 		cattlelog.debug("Running COW build")
@@ -192,6 +194,8 @@ def build(internal=False):
 		create_json_loc_cookie(os.path.join(app.config['UPLOAD_FOLDER'], filename + '-metadata.json'))
 		# resp = make_response(jsonify(json_schema)) #no longer return the json (only to ruminator)
 		# return cattle()
+		infolog.job_end("build")
+		app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 		if not internal:
 			return render_template('build.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
 		else:
@@ -216,9 +220,14 @@ def convert_local():
 	filename_json = os.path.basename(session['file_location'])
 	app.config['UPLOAD_FOLDER'] = os.path.dirname(session['file_location'])
 
+	infolog = info_log.info_log(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv))
+	infolog.job_start("convert")
+
 	if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)) and os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_json)):
 		cattlelog.debug("Running COW convert")
+		infolog.job_start("cow - conversion")
 		COW(mode='convert', files=[os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)])
+		infolog.job_end("cow - conversion")
 		cattlelog.debug("Convert finished")
 		try:
 			with open(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq')) as nquads_file:
@@ -248,6 +257,7 @@ def convert_local():
 
 	remove_files(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv))
 	clean_session()
+	infolog.job_end("convert")
 	return resp, 200
 
 @app.route('/druid/<username>/<dataset>', methods=['POST'])
@@ -327,6 +337,13 @@ def webhook_shooter():
 	update_webhooks("Cattle", AUTH_TOKEN)
 	cattlelog.debug("Webhook_shooter was called!")
 	return render_template('webhook.html')
+
+@app.route('/info', methods=['GET'])
+def info():
+	total_log = info_log.get_combined_log(UPLOAD_FOLDER_BASE)
+	# cattlelog.debug(json.dumps(total_log, indent=4))
+	return render_template('info.html', log_data=total_log)
+	# return render_template('info.html', log_data=total_log[session['user_location']])
 
 # Error handlers
 
