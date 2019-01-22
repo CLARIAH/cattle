@@ -23,7 +23,6 @@ import random
 import io
 
 from druid_integration import druid2cattle, make_hash_folder
-from mail_templates import send_new_graph_message
 from druid_longer import remove_files
 import info_log
 
@@ -68,7 +67,6 @@ MIME_TYPE_DICT = {"n3": "text/n3",
 	"json-ld": "application/ld+json"} 
 
 AUTH_TOKEN = "xxx"
-MAILGUN_AUTH_TOKEN = "yyy"
 SECRET_SESSION_KEY = b"zzz"
 app.secret_key = SECRET_SESSION_KEY
 ERROR_MAIL_ADDRESS = "xyxyxy"
@@ -181,6 +179,7 @@ def build(internal=False):
 		app.config['UPLOAD_FOLDER'] = make_hash_folder(app.config['UPLOAD_FOLDER'], file)
 
 		infolog = info_log.info_log(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+		cattlelog.debug("info_log_path= {}".format(os.path.join(app.config['UPLOAD_FOLDER'], filename)))
 		infolog.job_start("build")
 		if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
@@ -211,11 +210,6 @@ def convert_local():
 	cattlelog.info("Received request to convert files locally")
 	cattlelog.debug("Headers: {}".format(request.headers))
 
-	cattlelog.debug(request.form.get('formatSelect'))
-
-	# resp = make_response()
-	# return resp #remove!
-
 	filename_csv = os.path.basename(session['file_location'])[:-len('-metadata.json')]
 	filename_json = os.path.basename(session['file_location'])
 	app.config['UPLOAD_FOLDER'] = os.path.dirname(session['file_location'])
@@ -226,6 +220,10 @@ def convert_local():
 	if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)) and os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_json)):
 		cattlelog.debug("Running COW convert")
 		infolog.job_start("cow - conversion")
+		# sub_log_name = infolog.sub_start("cow - conversion")
+		# with open(os.path.join(app.config['UPLOAD_FOLDER'], sub_log_name), 'w') as sub_log:
+		# 	cattlelog.debug(os.path.join(app.config['UPLOAD_FOLDER'], sub_log_name))
+		# 	subprocess.Popen(["python", "src/cattle_longer.py", "-path", os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)], stdout=sub_log, stderr=subprocess.STDOUT)
 		COW(mode='convert', files=[os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)])
 		infolog.job_end("cow - conversion")
 		cattlelog.debug("Convert finished")
@@ -260,6 +258,24 @@ def convert_local():
 	infolog.job_end("convert")
 	return resp, 200
 
+@app.route('/build_convert', methods=['GET', 'POST'])
+def build_convert():
+	if 'json' not in request.files:
+		build(True)
+	else:
+		cattlelog.debug("found a json!:")
+		cattlelog.debug(request.files['json'])
+		upload_files()
+
+	return convert_local()
+
+@app.route('/convert', methods=['GET', 'POST'])
+def convert():
+	if 'file_location' in session:
+		return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
+	else:
+		return render_template('convert.html', currentFile="")
+
 @app.route('/druid/<username>/<dataset>', methods=['POST'])
 def druid(username, dataset):
 	# Retrieves a list of Druid files in a dataset; if .csv and .json present, downloads them, converts them, uploads results
@@ -278,22 +294,18 @@ def druid(username, dataset):
 	# cattlelog.debug("UPLOAD_FOLDER=== {}".format(app.config['UPLOAD_FOLDER']))
 	d2c = druid2cattle(username, dataset, cattlelog, app.config['UPLOAD_FOLDER'], requests, AUTH_TOKEN)
 	candidates, singles = d2c.get_candidates()
-
-	basename = request.json['assets'][0]['assetName'][:request.json['assets'][0]['assetName'].find(".csv")+4]
+ 	#################
+	try: ####UGLY FOR TESTING!!!!!!!!!!
+		basename = request.json['assets'][0]['assetName'][:request.json['assets'][0]['assetName'].find(".csv")+4]
+	except:
+		basename = "imf.csv" 
 	candidates, singles = d2c.select_candidate(candidates, singles, basename)
 
-	successes = []
 	if len(candidates.keys()) > 0:
-		successes += d2c.handle_pairs(candidates)
+		d2c.handle_pairs(candidates)
 	if len(singles.keys()) > 0:
-		successes += d2c.handle_singles(singles)
-	try:
-		email_address = request.json['user']['email']
-		account_name = request.json['user']['accountName']
-		if len(successes) > 0:
-			send_new_graph_message(email_address, account_name, successes, MAILGUN_AUTH_TOKEN)
-	except:
-		pass
+		d2c.handle_singles(singles)
+
 	return resp, 200
 
 @app.route('/ruminator', methods=['GET', 'POST'])
@@ -314,24 +326,6 @@ def save_json():
 	resp = make_response()
 	return resp, 200
 
-@app.route('/convert', methods=['GET', 'POST'])
-def convert():
-	if 'file_location' in session:
-		return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
-	else:
-		return render_template('convert.html', currentFile="")
-
-@app.route('/build_convert', methods=['GET', 'POST'])
-def build_convert():
-	if 'json' not in request.files:
-		build(True)
-	else:
-		cattlelog.debug("found a json!:")
-		cattlelog.debug(request.files['json'])
-		upload_files()
-
-	return convert_local()
-
 @app.route('/webhook_shooter', methods=['GET', 'POST'])
 def webhook_shooter():
 	update_webhooks("Cattle", AUTH_TOKEN)
@@ -339,11 +333,22 @@ def webhook_shooter():
 	return render_template('webhook.html')
 
 @app.route('/info', methods=['GET'])
-def info():
+@app.route('/info/<username>/<dataset>', methods=['GET'])
+def info(username=None, dataset=None):
+	if username == None:
+		try:
+			username = session['user_location']
+			dataset='web_interface'
+		except:
+			cattlelog.debug("NO USERNAME WAS FOUND!!!")
+			return render_template('info_spec.html', log_data={"no user has been specified, so there isn't any information available.": [{}]})
 	total_log = info_log.get_combined_log(UPLOAD_FOLDER_BASE)
-	# cattlelog.debug(json.dumps(total_log, indent=4))
-	return render_template('info.html', log_data=total_log)
-	# return render_template('info.html', log_data=total_log[session['user_location']])
+	# cattlelog.debug(json.dumps(total_log[username][dataset], indent=4))
+	# return render_template('info.html', log_data=total_log)
+	try:
+		return render_template('info_spec.html', log_data=total_log[username][dataset])
+	except:
+		return render_template('info_spec.html', log_data={"no user has been specified, so there isn't any information available.": [{}]})
 
 # Error handlers
 

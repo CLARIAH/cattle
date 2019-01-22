@@ -1,14 +1,30 @@
 import json
 from time import asctime
 import os
+import collections
+
+log_name = "activity.log"
+sub_log_name = "activity{}.sublog"
+
+def makehash():
+    return collections.defaultdict(makehash)
+
+#finds a not used numbered filename, by trying all 
+#existing filenames until you find one that doesn't exist 
+def make_sub_log_name():
+	i = 1
+	while i<999:
+		try:
+			open(sub_log_name.format(i))
+			i+=1
+		except:
+			return sub_log_name.format(i)
 
 class info_log:
-	def __init__(self, file_location, unique_id=""):
-		self.log_location = os.path.join(os.path.dirname(file_location), "activity.log")
-		if unique_id == "":
-			self.unique_id = file_location.split(os.sep)[2]
-		else:
-			self.unique_id = unique_id
+	def __init__(self, file_location):
+		self.log_location = os.path.join(os.path.dirname(file_location), log_name)
+		self.unique_id = file_location.split(os.sep)[-4]
+		self.dataset = file_location.split(os.sep)[-3]
 		self.filename = os.path.basename(file_location)
 
 	def load(self):
@@ -25,12 +41,21 @@ class info_log:
 	def add_event(self, event):
 		log_data = self.load()
 		try:
-			log_data[self.unique_id][self.filename].append(event)
+			log_data[self.unique_id][self.dataset][self.filename].append(event)
 		except:
 			try:
-				log_data[self.unique_id].update({self.filename: [event]})
+				log_data[self.unique_id][self.dataset].update({self.filename: [event]})
 			except:
-				log_data[self.unique_id] = {self.filename: [event]}
+				try:
+					log_data[self.unique_id][self.dataset] = {self.filename: [event]}
+				except:
+					try:
+						log_data[self.unique_id].update({self.dataset: {self.filename: [event]}})
+					except:
+						try:
+							log_data[self.unique_id] = {self.dataset: {self.filename: [event]}}
+						except:
+							log_data = {self.unique_id: {self.dataset: {self.filename: [event]}}}
 		self.save(log_data)
 
 	def job(self, job_name, extra_info=""):
@@ -54,6 +79,11 @@ class info_log:
 	def job_error(self, extra_info=""):
 		self.job("ERROR", extra_info)
 
+	def sub_start(self, name, extra_info=""):
+		sub_name = make_sub_log_name()
+		self.job("sub_" + name, sub_name)
+		return sub_name
+
 
 def find_logs(path):
 	log_locations = []
@@ -65,22 +95,23 @@ def find_logs(path):
 
 def get_combined_log(path):
 	log_locations = find_logs(path)
-	huge_log = {}
+	huge_log = makehash()
 	for log_location in log_locations:
 		with open(log_location, 'r') as log_file:
 			loaded = json.load(log_file)
-			new_keys = list(loaded.keys())
-			copy_new_keys = new_keys[:]
-			for key in huge_log.keys():
-				for new_key in new_keys:
-					if key == new_key:
-						huge_log[key].update(loaded[new_key])
-						copy_new_keys.remove(key)
-						break
-			for new_key in copy_new_keys:
-				huge_log[new_key] = loaded[new_key]
-			# huge_log.update(json.load(log_file))
-	return huge_log
+			for username in loaded.keys():
+				for dataset in loaded[username].keys():
+					for filename in loaded[username][dataset]:
+						for event in loaded[username][dataset][filename]:
+							if event["event"].startswith("sub_"):
+								with open(os.path.join(os.path.dirname(log_location), event["extra"]), 'r') as sub_log:
+									event["extra"] = sub_log.read()
+							try:
+								# probably never occurs?
+								huge_log[username][dataset][filename].append(event)
+							except:
+								huge_log[username][dataset][filename] = [event]
+	return json.loads(json.dumps(huge_log)) #turns the defaultdict into a dict
 
 ###example of how to use the log
 # log = info_log("/tmp/<user_location>/web_interface/<file_location>/<file_name>")

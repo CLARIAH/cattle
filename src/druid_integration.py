@@ -19,6 +19,8 @@ from time import time
 from mail_templates import send_new_graph_message
 import codecs
 
+import info_log
+
 #create hash to use as folder to save the files
 def create_hash(csv_file, json_file, read_files=True, logger=None):
 	m = md5()
@@ -157,60 +159,30 @@ class druid2cattle:
 		self.logger.debug("File {} uploaded successfully".format(os.path.join(self.upload_folder, self.path + '-metadata.json')))
 		return True
 
-	def build_graph(self):
-		COW(mode='convert', files=[os.path.join(self.upload_folder, self.path)])
-		self.logger.debug("Convert finished")
-		try:
-			with open(os.path.join(self.upload_folder, self.path + '.nq')) as nquads_file:
-				g = ConjunctiveGraph()
-				g.parse(nquads_file, format='nquads')
-			return g
-		except IOError:
-			raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
-
-	def upload_graph(self, graph):
-		# Compress result
-		out = os.path.join(self.upload_folder, self.path + '.nq.gz')
-		with gzip.open(out, mode="w") as gzip_file:
-			gzip_file.write(graph.serialize(format='application/n-quads'))
-
-		self.logger.debug("user: {} dataset: {} file: {}".format(self.username, self.dataset, out))
-
-		# using triply's uploadFiles client
-		subprocess.Popen(args=["./uploadScripts/node_modules/.bin/uploadFiles", "-t", self.token, "-d", self.dataset, "-a", self.username, "-u", "https://api.druid.datalegend.net", "-p", out])
-		self.logger.debug("Upload to Druid started..")
-
-	def remove_files(self):
-		csv_path = os.path.join(self.upload_folder, self.path)
-		json_path = os.path.join(self.upload_folder, self.path + '-metadata.json')
-
-		self.logger.debug('Removing the csv file and json file...')
-
-		os.remove(csv_path)
-		os.remove(json_path)
-
-		self.logger.debug('Finished removing the csv file and json file.')
-
 	def handle_pairs(self, candidates):
 		# if .csv and .json pairs are present int the assets, downloads them, converts them, uploads results
 		self.logger.debug('Downloading and converting: {}'.format(candidates.keys()))
-		successes = []
 		for f in candidates.keys():
 
-			# Download
+
 			if not self.download_pair(f, candidates[f]):
 				continue
-			# proc = subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username])
-			subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-			
-			# Convert
-			# graph = self.build_graph()
+			infolog.job_end("download pair")
+			infolog = info_log.info_log(os.path.join(self.upload_folder, self.path))
 
-			# # Upload
-			# self.upload_graph(graph)
-			# self.remove_files()
-			# successes.append(f)
-		return successes
+			infolog.job_start("druid_longer")
+			sub_log_name = infolog.sub_start("druid_longer")
+			try:
+				email_address = self.requests.json['user']['email']
+				account_name = self.requests.json['user']['accountName']
+			except:
+				email_address = ""
+				account_name = ""
+			with open(os.path.join(self.upload_folder, sub_log_name), 'w') as sub_log:
+				subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username, "-email_address", email_address, "account_name", account_name], stdout=sub_log, stderr=subprocess.STDOUT)
+			infolog.job_end("druid_longer")
+			
+			# Convert & upload happens in subprocess(druid_longer.py)
 
 	def download_single(self, f, candidate):
 		# Downloads the csv
@@ -246,10 +218,11 @@ class druid2cattle:
 	def handle_singles(self, candidates):
 		self.logger.debug("Waiting for possible json-files.")
 		self.logger.debug("Starting with the single csv-files.")
-		successes = []
 		for f in candidates.keys():
 			self.logger.debug("handling single: " + f)
 			self.download_single(f, candidates[f])
+			infolog = info_log.info_log(os.path.join(self.upload_folder, self.path))
+			infolog.job_end("download single")
 			if self.found_new_json(f):
 				self.logger.debug("Stopped because a new json was found.")
 				continue
@@ -257,12 +230,17 @@ class druid2cattle:
 			if self.found_new_json(f):
 				self.logger.debug("Stopped because a new json was found.")
 				continue
-			subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-			# graph = self.build_graph()
-			# if self.found_new_json(f):
-			# 	self.logger.debug("Stopped because a new json was found.")
-			# 	continue
-			# self.upload_graph(graph)
-			# #still remove files?
-			# successes.append(f)
-		return successes
+
+			sub_log_name = infolog.sub_start("druid_longer")
+			try:
+				email_address = self.requests.json['user']['email']
+				account_name = self.requests.json['user']['accountName']
+			except:
+				email_address = ""
+				account_name = ""
+				self.logger.debug("no email email_address was found..")
+			with open(os.path.join(self.upload_folder, os.path.dirname(self.path), sub_log_name), 'w') as sub_log:
+				subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username, "-email_address", email_address, "-account_name", account_name], stdout=sub_log, stderr=subprocess.STDOUT)
+
+			# Convert & upload happens in subprocess(druid_longer.py)
+

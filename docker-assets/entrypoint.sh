@@ -20,7 +20,7 @@ case ${1} in
 
         ## Replace tokens in code
         sed -i "s/xxx/${AUTH_TOKEN}/" src/cattle.py
-        sed -i "s/yyy/${MAILGUN_AUTH_TOKEN}/" src/cattle.py
+        sed -i "s/yyy/${MAILGUN_AUTH_TOKEN}/" src/druid_longer.py
         sed -i "s/xyxyxy/${ERROR_MAIL_ADDRESS}/" src/cattle.py
         sed -i "s/zzz/${SECRET_SESSION_KEY}/" src/cattle.py
 
