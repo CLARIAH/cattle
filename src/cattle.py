@@ -30,7 +30,7 @@ import info_log
 app = Flask(__name__)
 
 # Uploading
-UPLOAD_FOLDER_BASE = '/tmp'
+UPLOAD_FOLDER_BASE = '/home/cattle/storage'
 ALLOWED_EXTENSIONS = set(['csv', 'json'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 
