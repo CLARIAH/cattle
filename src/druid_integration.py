@@ -179,7 +179,7 @@ class druid2cattle:
 				email_address = ""
 				account_name = ""
 			with open(os.path.join(self.upload_folder, sub_log_name), 'w') as sub_log:
-				subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username, "-email_address", email_address, "account_name", account_name], stdout=sub_log, stderr=subprocess.STDOUT)
+				subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username, "-email_address", email_address, "account_name", account_name], stdout=sub_log, stderr=sub_log)
 			infolog.job_end("druid_longer")
 			
 			# Convert & upload happens in subprocess(druid_longer.py)
@@ -240,7 +240,7 @@ class druid2cattle:
 				account_name = ""
 				self.logger.debug("no email email_address was found..")
 			with open(os.path.join(self.upload_folder, os.path.dirname(self.path), sub_log_name), 'w') as sub_log:
-				subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username, "-email_address", email_address, "-account_name", account_name], stdout=sub_log, stderr=subprocess.STDOUT)
+				subprocess.Popen(["python", "src/druid_longer.py", "-path", os.path.join(self.upload_folder, self.path), "-token", self.token, "-dataset", self.dataset, "-username", self.username, "-email_address", email_address, "-account_name", account_name], stdout=sub_log, stderr=sub_log)
 
 			# Convert & upload happens in subprocess(druid_longer.py)
 
