@@ -14,11 +14,11 @@ def makehash():
 def make_sub_log_name():
 	i = 1
 	while i<999:
-		try:
-			open(sub_log_name.format(i))
+		if os.path.exists(sub_log_name.format(i)):
 			i+=1
-		except:
+		else:
 			return sub_log_name.format(i)
+	return sub_log_name.format(i)
 
 class info_log:
 	def __init__(self, file_location):
