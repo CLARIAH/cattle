@@ -12,6 +12,8 @@ ENV CATTLE_INSTALL_DIR="${CATTLE_HOME}/cattle" \
     CATTLE_BUILD_DIR="${CATTLE_CACHE_DIR}/build" \
     CATTLE_RUNTIME_DIR="${CATTLE_CACHE_DIR}/runtime"
 
+RUN printf "deb http://archive.debian.org/debian/ jessie main\ndeb-src http://archive.debian.org/debian/ jessie main\ndeb http://security.debian.org jessie/updates main\ndeb-src http://security.debian.org jessie/updates main" > /etc/apt/sources.list
+
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y nginx git-core logrotate python python-pip locales gettext-base sudo curl \
  && update-locale LANG=C.UTF-8 LC_MESSAGES=POSIX \
