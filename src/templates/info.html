@@ -1,0 +1,35 @@
+{% include 'header.html' %}
+
+<div class="inner" style="margin-top: 30px; margin-bottom: 30px">
+	<p class="h4">This is the info page:</p><br />
+	<table style="width:100%">
+	{% for user in log_data %}
+		<tr>
+			<th>{{ user }}</th>
+		</tr>
+		{% for dataset in log_data[user] %}
+			<tr>
+				<th>{{ dataset }}</th>
+			</tr>
+			{% for filename in log_data[user][dataset] %}
+				<tr>
+					<th>{{ filename }}</th>
+				</tr>
+				{% for event_obj in log_data[user][dataset][filename] %}
+					<tr>
+						<td>{{ event_obj['time'] }}</td>
+						<td>{{ event_obj['event'] }}</td>
+						<td>{{ event_obj['extra'] }}</td>
+					</tr>
+				{% endfor %}
+				<!-- {{ log_data[key] }} <br /> -->
+			<!-- 	{% for key2 in log_data[key] %}
+			  		{{ log_data[key][key2].time }}
+				{% endfor %} -->
+			{% endfor %}
+		{% endfor %}
+	{% endfor %}
+	<table>
+</div>
+
+{% include 'footer.html' %}

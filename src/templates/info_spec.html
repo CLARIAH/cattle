@@ -1,0 +1,25 @@
+{% include 'header.html' %}
+
+<div class="inner" style="margin-top: 30px; margin-bottom: 30px">
+	<p class="h4">This is the info page:</p><br />
+	<table style="width:120%">
+	{% for filename in log_data %}
+		<tr>
+			<th>{{ filename }}</th>
+		</tr>
+		{% for event_obj in log_data[filename] %}
+			<tr>
+				<td>{{ event_obj['time'] }}</td>
+				<td>{{ event_obj['event'] }}</td>
+				<td align="left" style="border: 1px solid black">{{ event_obj['extra'] }}</td>
+			</tr>
+		{% endfor %}
+		<!-- {{ log_data[key] }} <br /> -->
+	<!-- 	{% for key2 in log_data[key] %}
+	  		{{ log_data[key][key2].time }}
+		{% endfor %} -->
+	{% endfor %}
+	<table>
+</div>
+
+{% include 'footer.html' %}
