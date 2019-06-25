@@ -10,12 +10,12 @@ gunicorn==19.7.1
 idna==2.6
 isodate==0.6.0
 itsdangerous==0.24
-Jinja2==2.10
+Jinja2>=2.10.1
 MarkupSafe==1.0
 pyparsing==2.2.0
 rdflib==4.2.2
 requests>=2.20.0
 six==1.11.0
-urllib3==1.22
+urllib3>=1.24.2
 Werkzeug==0.14.1
 rdflib-jsonld==0.4.0

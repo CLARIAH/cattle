@@ -15,23 +15,19 @@ import StringIO
 import gzip
 import shutil
 import traceback
-from hashlib import md5
-from time import sleep, time
-from updateWebhooks import update_webhooks
 from string import ascii_uppercase, digits
 import random
 import io
 
-from druid_integration import druid2cattle, make_hash_folder
-from mail_templates import send_new_graph_message
+from hash_folder import make_hash_folder
 
 # The Flask app
 app = Flask(__name__)
 
 # Uploading
-UPLOAD_FOLDER = '/tmp'
+UPLOAD_FOLDER_BASE = '/home/cattle/storage'
 ALLOWED_EXTENSIONS = set(['csv', 'json'])
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 
 # Logging
 LOG_FORMAT = '%(asctime)-15s [%(levelname)s] (%(module)s.%(funcName)s) %(message)s'
@@ -66,7 +62,6 @@ MIME_TYPE_DICT = {"n3": "text/n3",
 	"json-ld": "application/ld+json"} 
 
 AUTH_TOKEN = "xxx"
-MAILGUN_AUTH_TOKEN = "yyy"
 SECRET_SESSION_KEY = b"zzz"
 app.secret_key = SECRET_SESSION_KEY
 ERROR_MAIL_ADDRESS = "xyxyxy"
@@ -79,6 +74,15 @@ def allowed_file(filename):
 def create_random_id(size=10):
 	chars = ascii_uppercase + digits
 	return ''.join(random.choice(chars) for _ in range(size))
+
+def remove_files(path):
+	csv_path = path
+	json_path = path + '-metadata.json'
+	print('Removing the csv file and json file...')
+
+	os.remove(csv_path)
+	os.remove(json_path)
+	print('Finished removing the csv file and json file.')
 
 # create cookie for this specific user
 # in order to distinquish different json files that originated the same csv file.
@@ -102,6 +106,7 @@ def create_json_loc_cookie(json_loc):
 
 def clean_session():
 	session.pop('file_location', None)
+	app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 
 def upload_files():
 	cattlelog.info("Uploading csv and json files...")
@@ -144,7 +149,11 @@ def cattle():
 		except:	
 			resp = make_response(render_template('index.html', version='?.??', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")]))
 	else:
-		resp = make_response(render_template('index.html', version=subprocess.check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT).strip(), currentFile=''))
+		try:
+			resp = make_response(render_template('index.html', version=subprocess.check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT).strip(), currentFile=''))
+		except:	
+			resp = make_response(render_template('index.html', version='?.??', currentFile=''))
+
 	resp.headers['X-Powered-By'] = 'https://github.com/CLARIAH/cattle'
 
 	return resp
@@ -176,10 +185,8 @@ def build(internal=False):
 		return resp, 400
 	if file and allowed_file(filename):
 		app.config['UPLOAD_FOLDER'] = make_hash_folder(app.config['UPLOAD_FOLDER'], file)
-
 		if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
 		cattlelog.debug("File {} uploaded successfully".format(os.path.join(app.config['UPLOAD_FOLDER'], filename)))
 		
 		cattlelog.debug("Running COW build")
@@ -190,6 +197,7 @@ def build(internal=False):
 		create_json_loc_cookie(os.path.join(app.config['UPLOAD_FOLDER'], filename + '-metadata.json'))
 		# resp = make_response(jsonify(json_schema)) #no longer return the json (only to ruminator)
 		# return cattle()
+		app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 		if not internal:
 			return render_template('build.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
 		else:
@@ -205,17 +213,15 @@ def convert_local():
 	cattlelog.info("Received request to convert files locally")
 	cattlelog.debug("Headers: {}".format(request.headers))
 
-	cattlelog.debug(request.form.get('formatSelect'))
-
-	# resp = make_response()
-	# return resp #remove!
-
 	filename_csv = os.path.basename(session['file_location'])[:-len('-metadata.json')]
 	filename_json = os.path.basename(session['file_location'])
 	app.config['UPLOAD_FOLDER'] = os.path.dirname(session['file_location'])
 
 	if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)) and os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_json)):
 		cattlelog.debug("Running COW convert")
+		# with open(os.path.join(app.config['UPLOAD_FOLDER'], sub_log_name), 'w') as sub_log:
+		# 	cattlelog.debug(os.path.join(app.config['UPLOAD_FOLDER'], sub_log_name))
+		# 	subprocess.Popen(["python", "src/cattle_longer.py", "-path", os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)], stdout=sub_log, stderr=subprocess.STDOUT)
 		COW(mode='convert', files=[os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)])
 		cattlelog.debug("Convert finished")
 		try:
@@ -244,44 +250,27 @@ def convert_local():
 	else:
 		raise Exception('No files supplied, wrong file types, or unexpected file extensions')
 
+	remove_files(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv))
 	clean_session()
 	return resp, 200
 
-@app.route('/druid/<username>/<dataset>', methods=['POST'])
-def druid(username, dataset):
-	# Retrieves a list of Druid files in a dataset; if .csv and .json present, downloads them, converts them, uploads results
-	# if only a csv is present a json will be created for it.
-	cattlelog.debug("Starting Druid-based conversion")
+@app.route('/build_convert', methods=['GET', 'POST'])
+def build_convert():
+	if 'json' not in request.files:
+		build(True)
+	else:
+		cattlelog.debug("found a json!:")
+		cattlelog.debug(request.files['json'])
+		upload_files()
 
-	try:
-		if request.json['assets'][0]['assetName'].endswith('.csv'):
-			cattlelog.debug("Waiting for possible json-files...")
-			sleep(10) #wait for possible json files to be uploaded.
-	except:
-		pass
+	return convert_local()
 
-	resp = make_response()
-
-	# cattlelog.debug("UPLOAD_FOLDER=== {}".format(app.config['UPLOAD_FOLDER']))
-	d2c = druid2cattle(username, dataset, cattlelog, app.config['UPLOAD_FOLDER'], requests, AUTH_TOKEN)
-	candidates, singles = d2c.get_candidates()
-
-	basename = request.json['assets'][0]['assetName'][:request.json['assets'][0]['assetName'].find(".csv")+4]
-	candidates, singles = d2c.select_candidate(candidates, singles, basename)
-
-	successes = []
-	if len(candidates.keys()) > 0:
-		successes += d2c.handle_pairs(candidates)
-	if len(singles.keys()) > 0:
-		successes += d2c.handle_singles(singles)
-	try:
-		email_address = request.json['user']['email']
-		account_name = request.json['user']['accountName']
-		if len(successes) > 0:
-			send_new_graph_message(email_address, account_name, successes, MAILGUN_AUTH_TOKEN)
-	except:
-		pass
-	return resp, 200
+@app.route('/convert', methods=['GET', 'POST'])
+def convert():
+	if 'file_location' in session:
+		return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
+	else:
+		return render_template('convert.html', currentFile="")
 
 @app.route('/ruminator', methods=['GET', 'POST'])
 def ruminator():
@@ -300,30 +289,6 @@ def save_json():
 	cattlelog.debug("The json file has been altered and saved. :D")
 	resp = make_response()
 	return resp, 200
-
-@app.route('/convert', methods=['GET', 'POST'])
-def convert():
-	if 'file_location' in session:
-		return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
-	else:
-		return render_template('convert.html', currentFile="")
-
-@app.route('/build_convert', methods=['GET', 'POST'])
-def build_convert():
-	if 'json' not in request.files:
-		build(True)
-	else:
-		cattlelog.debug("found a json!:")
-		cattlelog.debug(request.files['json'])
-		upload_files()
-
-	return convert_local()
-
-@app.route('/webhook_shooter', methods=['GET', 'POST'])
-def webhook_shooter():
-	update_webhooks("Cattle", AUTH_TOKEN)
-	cattlelog.debug("Webhook_shooter was called!")
-	return render_template('webhook.html')
 
 # Error handlers
 
