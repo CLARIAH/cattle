@@ -2,7 +2,7 @@
 
 # cattle: A Web service for COW
 
-from flask import Flask, request, render_template, make_response, redirect, jsonify, session
+from flask import Flask, request, render_template, make_response, redirect, jsonify, session, send_from_directory
 from werkzeug.utils import secure_filename
 import logging
 import requests
@@ -20,6 +20,7 @@ import random
 import io
 
 from hash_folder import make_hash_folder
+from cattle_process import create_thread
 
 # The Flask app
 app = Flask(__name__)
@@ -65,6 +66,7 @@ AUTH_TOKEN = "xxx"
 SECRET_SESSION_KEY = b"zzz"
 app.secret_key = SECRET_SESSION_KEY
 ERROR_MAIL_ADDRESS = "xyxyxy"
+FILE_SIZE_THRESHOLD = 1.5 #in MB
 
 # Util functions
 
@@ -213,17 +215,23 @@ def convert_local():
 	cattlelog.info("Received request to convert files locally")
 	cattlelog.debug("Headers: {}".format(request.headers))
 
+	app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE #because otherwise it nests after it errors
+
 	filename_csv = os.path.basename(session['file_location'])[:-len('-metadata.json')]
 	filename_json = os.path.basename(session['file_location'])
 	app.config['UPLOAD_FOLDER'] = os.path.dirname(session['file_location'])
 
 	if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)) and os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_json)):
 		cattlelog.debug("Running COW convert")
-		# with open(os.path.join(app.config['UPLOAD_FOLDER'], sub_log_name), 'w') as sub_log:
-		# 	cattlelog.debug(os.path.join(app.config['UPLOAD_FOLDER'], sub_log_name))
-		# 	subprocess.Popen(["python", "src/cattle_longer.py", "-path", os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)], stdout=sub_log, stderr=subprocess.STDOUT)
-		COW(mode='convert', files=[os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)])
-		cattlelog.debug("Convert finished")
+		cattlelog.debug("The size of the file is {} Bytes.".format(os.stat(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)).st_size))
+		if (os.stat(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)).st_size * 1024 * 1024) > FILE_SIZE_THRESHOLD:
+			create_thread(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv), cattlelog)
+			path_list = app.config['UPLOAD_FOLDER'].split(os.sep)
+			cattlelog.debug("path_list: {}".format(path_list))
+			return download_page(path_list[-3] + "." + path_list[-1])
+		else:
+			COW(mode='convert', files=[os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)])
+			cattlelog.debug("Convert finished")
 		try:
 			with open(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq')) as nquads_file:
 				g = ConjunctiveGraph()
@@ -289,6 +297,28 @@ def save_json():
 	cattlelog.debug("The json file has been altered and saved. :D")
 	resp = make_response()
 	return resp, 200
+
+@app.route('/download/<combined_hash>')
+def download_page(combined_hash):
+	user_hash, file_hash = combined_hash.split('.')
+	file_location = os.path.join(UPLOAD_FOLDER_BASE, user_hash, 'web_interface', file_hash)
+	try:
+		csv_files = [f for f in os.listdir(file_location) if f.endswith(".csv")]
+		json_files = [f for f in os.listdir(file_location) if f.endswith(".json")]
+	except:
+		return render_template('error.html', error_message="This hash [{}] does not resolve to a file.".format(combined_hash), error_mail_address=ERROR_MAIL_ADDRESS)
+	if len(csv_files) < 1 and len(json_files) < 1: 
+		return render_template('download_page.html', ready_for_download=True, hash=combined_hash)
+	else:
+		return render_template('download_page.html', ready_for_download=False, hash="")
+
+@app.route('/download_/<combined_hash>')
+def download_file(combined_hash):
+	cattlelog.debug("the hash: {}".format(combined_hash))
+	user_hash, file_hash = combined_hash.split('.')
+	file_location = os.path.join(UPLOAD_FOLDER_BASE, user_hash, 'web_interface', file_hash)
+	rdf_file = [f for f in os.listdir(file_location) if f.endswith(".csv.nq")]
+	return send_from_directory(file_location, rdf_file[0], as_attachment=True)
 
 # Error handlers
 

@@ -1,0 +1,12 @@
+{% include 'header.html' %}
+
+<div class="inner">
+	{% if ready_for_download == true %}
+		Your file has finished conversion and can be download!<br />
+		simply click <a href="{{ url_for('download_file', combined_hash=hash) }}">this button!</a>
+	{% else %}
+		Conversion is still under way, please give the cows some more time.
+	{% endif %}
+</div>
+
+{% include 'footer.html' %}
