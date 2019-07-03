@@ -319,8 +319,15 @@ def download_file(combined_hash):
 	cattlelog.debug("the hash: {}".format(combined_hash))
 	user_hash, file_hash = combined_hash.split('.')
 	file_location = os.path.join(UPLOAD_FOLDER_BASE, user_hash, 'web_interface', file_hash)
-	rdf_file = [f for f in os.listdir(file_location) if f.endswith(".csv.nq")]
-	return send_from_directory(file_location, rdf_file[0], as_attachment=True)
+	try:
+		rdf_file = [f for f in os.listdir(file_location) if f.endswith(".csv.nq")]
+	except:
+		return render_template('error.html', error_message="This hash [{}] does not resolve to a file.".format(combined_hash), error_mail_address=ERROR_MAIL_ADDRESS)		
+	try:
+		return send_from_directory(file_location, rdf_file[0], as_attachment=True)
+	except Exception as e:
+		return render_template('error.html', error_message="Cattle was not able to find your linked data file. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS)
+
 
 # Error handlers
 
