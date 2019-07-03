@@ -5,8 +5,13 @@
 		Your file has finished conversion and can be download!<br />
 		simply click <a href="{{ url_for('download_file', combined_hash=hash) }}">this button!</a>
 	{% else %}
-		Conversion is still under way, please give the cows some more time.
+		Conversion is still under way, please give the cows some more time. <br />
+		When the conversion is finished it will be available <a href="{{ url_for('download_page', combined_hash=hash) }}">here!</a>!
 	{% endif %}
 </div>
+
+<script type="text/javascript">
+	$(document).ready(function() {console.log('{{hash}}')});
+</script>
 
 {% include 'footer.html' %}

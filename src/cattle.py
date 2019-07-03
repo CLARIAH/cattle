@@ -26,7 +26,7 @@ from cattle_process import create_thread
 app = Flask(__name__)
 
 # Uploading
-UPLOAD_FOLDER_BASE = '/home/cattle/storage'
+UPLOAD_FOLDER_BASE = '/tmp'
 ALLOWED_EXTENSIONS = set(['csv', 'json'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 
@@ -66,7 +66,7 @@ AUTH_TOKEN = "xxx"
 SECRET_SESSION_KEY = b"zzz"
 app.secret_key = SECRET_SESSION_KEY
 ERROR_MAIL_ADDRESS = "xyxyxy"
-FILE_SIZE_THRESHOLD = 1.5 #in MB
+FILE_SIZE_THRESHOLD = 1.0 #in MB
 
 # Util functions
 
@@ -113,7 +113,7 @@ def clean_session():
 def upload_files():
 	cattlelog.info("Uploading csv and json files...")
 	create_user_cookie()
-	app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], session['user_location'])
+	path = os.path.join(UPLOAD_FOLDER_BASE, session['user_location'])
 
 	if 'csv' in request.files and 'json' in request.files:
 		csv_file = request.files['csv']
@@ -126,18 +126,18 @@ def upload_files():
 			return 0
 
 		if csv_file and json_file and allowed_file(csv_filename) and allowed_file(json_filename):
-			app.config['UPLOAD_FOLDER'] = make_hash_folder(app.config['UPLOAD_FOLDER'], csv_file, json_file)
+			path = make_hash_folder(path, csv_file, json_file)
 
-			if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], csv_filename)):
-				csv_file.save(os.path.join(app.config['UPLOAD_FOLDER'], csv_filename))
-			if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], json_filename)):
-				json_file.save(os.path.join(app.config['UPLOAD_FOLDER'], json_filename))
+			if not os.path.exists(os.path.join(path, csv_filename)):
+				csv_file.save(os.path.join(path, csv_filename))
+			if not os.path.exists(os.path.join(path, json_filename)):
+				json_file.save(os.path.join(path, json_filename))
 
-			cattlelog.debug("Files {} and {} uploaded successfully".format(os.path.join(app.config['UPLOAD_FOLDER'], csv_filename),os.path.join(app.config['UPLOAD_FOLDER'], json_filename)))
+			cattlelog.debug("Files {} and {} uploaded successfully".format(os.path.join(path, csv_filename),os.path.join(path, json_filename)))
 	else:
 		return 0
 
-	create_json_loc_cookie(os.path.join(app.config['UPLOAD_FOLDER'], json_filename))
+	create_json_loc_cookie(os.path.join(path, json_filename))
 	cattlelog.info("Upload complete.")
 
 # Routes
@@ -173,7 +173,8 @@ def build(internal=False):
 	cattlelog.debug("Headers: {}".format(request.headers))
 
 	create_user_cookie()
-	app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], session['user_location'])
+	# app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], session['user_location'])
+	path = os.path.join(UPLOAD_FOLDER_BASE , session['user_location'])
 
 	resp = make_response()
 
@@ -186,20 +187,20 @@ def build(internal=False):
 		cattlelog.error('No selected file')
 		return resp, 400
 	if file and allowed_file(filename):
-		app.config['UPLOAD_FOLDER'] = make_hash_folder(app.config['UPLOAD_FOLDER'], file)
-		if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
-			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-		cattlelog.debug("File {} uploaded successfully".format(os.path.join(app.config['UPLOAD_FOLDER'], filename)))
+		path = make_hash_folder(path, file)
+		if not os.path.exists(os.path.join(path, filename)):
+			file.save(os.path.join(path, filename))
+		cattlelog.debug("File {} uploaded successfully".format(os.path.join(path, filename)))
 		
 		cattlelog.debug("Running COW build")
-		COW(mode='build', files=[os.path.join(app.config['UPLOAD_FOLDER'], filename)])
+		COW(mode='build', files=[os.path.join(path, filename)])
 		cattlelog.debug("Build finished")
-		with open(os.path.join(app.config['UPLOAD_FOLDER'], filename + '-metadata.json')) as json_file:
+		with open(os.path.join(path, filename + '-metadata.json')) as json_file:
 			json_schema = json.loads(json_file.read())
-		create_json_loc_cookie(os.path.join(app.config['UPLOAD_FOLDER'], filename + '-metadata.json'))
+		create_json_loc_cookie(os.path.join(path, filename + '-metadata.json'))
 		# resp = make_response(jsonify(json_schema)) #no longer return the json (only to ruminator)
 		# return cattle()
-		app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
+		# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 		if not internal:
 			return render_template('build.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
 		else:
@@ -219,21 +220,21 @@ def convert_local():
 
 	filename_csv = os.path.basename(session['file_location'])[:-len('-metadata.json')]
 	filename_json = os.path.basename(session['file_location'])
-	app.config['UPLOAD_FOLDER'] = os.path.dirname(session['file_location'])
+	path = os.path.dirname(session['file_location'])
 
-	if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)) and os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename_json)):
+	if os.path.exists(os.path.join(path, filename_csv)) and os.path.exists(os.path.join(path, filename_json)):
 		cattlelog.debug("Running COW convert")
-		cattlelog.debug("The size of the file is {} Bytes.".format(os.stat(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)).st_size))
-		if (os.stat(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)).st_size * 1024 * 1024) > FILE_SIZE_THRESHOLD:
-			create_thread(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv), cattlelog)
-			path_list = app.config['UPLOAD_FOLDER'].split(os.sep)
+		cattlelog.debug("The size of the file is {} Bytes.".format(os.stat(os.path.join(path, filename_csv)).st_size))
+		if os.stat(os.path.join(path, filename_csv)).st_size > (FILE_SIZE_THRESHOLD * 1024 * 1024):
+			create_thread(os.path.join(path, filename_csv), cattlelog)
+			path_list = path.split(os.sep)
 			cattlelog.debug("path_list: {}".format(path_list))
 			return download_page(path_list[-3] + "." + path_list[-1])
 		else:
-			COW(mode='convert', files=[os.path.join(app.config['UPLOAD_FOLDER'], filename_csv)])
+			COW(mode='convert', files=[os.path.join(path, filename_csv)])
 			cattlelog.debug("Convert finished")
 		try:
-			with open(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv + '.nq')) as nquads_file:
+			with open(os.path.join(path, filename_csv + '.nq')) as nquads_file:
 				g = ConjunctiveGraph()
 				g.parse(nquads_file, format='nquads')
 		except IOError:
@@ -258,7 +259,7 @@ def convert_local():
 	else:
 		raise Exception('No files supplied, wrong file types, or unexpected file extensions')
 
-	remove_files(os.path.join(app.config['UPLOAD_FOLDER'], filename_csv))
+	remove_files(os.path.join(path, filename_csv))
 	clean_session()
 	return resp, 200
 
@@ -300,6 +301,7 @@ def save_json():
 
 @app.route('/download/<combined_hash>')
 def download_page(combined_hash):
+	cattlelog.debug("this is the hash: {}".format(combined_hash))
 	user_hash, file_hash = combined_hash.split('.')
 	file_location = os.path.join(UPLOAD_FOLDER_BASE, user_hash, 'web_interface', file_hash)
 	try:
@@ -310,7 +312,7 @@ def download_page(combined_hash):
 	if len(csv_files) < 1 and len(json_files) < 1: 
 		return render_template('download_page.html', ready_for_download=True, hash=combined_hash)
 	else:
-		return render_template('download_page.html', ready_for_download=False, hash="")
+		return render_template('download_page.html', ready_for_download=False, hash=combined_hash)
 
 @app.route('/download_/<combined_hash>')
 def download_file(combined_hash):
