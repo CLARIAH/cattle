@@ -27,7 +27,7 @@ app = Flask(__name__)
 
 # Uploading
 UPLOAD_FOLDER_BASE = '/tmp'
-ALLOWED_EXTENSIONS = set(['csv', 'json'])
+ALLOWED_EXTENSIONS = set(['csv', 'json', 'tsv'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 
 # Logging
@@ -120,6 +120,9 @@ def upload_files():
 		json_file= request.files['json']
 		csv_filename = secure_filename(csv_file.filename)
 		json_filename = secure_filename(json_file.filename)
+		if csv_filename.endswith('.tsv'):
+			csv_filename = csv_filename[:-3]+"csv"
+			json_filename = json_filename[:-17]+"csv-metadata.json"
 
 		if csv_filename == '' or json_filename == '':
 			cattlelog.error('No selected file')
@@ -183,6 +186,8 @@ def build(internal=False):
 		return resp, 400
 	file = request.files['csv']
 	filename = secure_filename(file.filename)
+	if filename.endswith('.tsv'):
+		filename = filename[:-3]+"csv"
 	if filename == '':
 		cattlelog.error('No selected file')
 		return resp, 400
