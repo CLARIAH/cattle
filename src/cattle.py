@@ -320,7 +320,7 @@ def download_page(combined_hash):
 		return render_template('download_page.html', ready_for_download=False, hash=combined_hash)
 
 @app.route('/download_/<combined_hash>')
-def download_file(combined_hash):
+def download_linked_data(combined_hash):
 	cattlelog.debug("the hash: {}".format(combined_hash))
 	user_hash, file_hash = combined_hash.split('.')
 	file_location = os.path.join(UPLOAD_FOLDER_BASE, user_hash, 'web_interface', file_hash)
@@ -333,6 +333,15 @@ def download_file(combined_hash):
 	except Exception as e:
 		return render_template('error.html', error_message="Cattle was not able to find your linked data file. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS)
 
+
+@app.route('/download_json', methods=['GET'])
+def download_json():
+	if 'file_location' in session:
+		path, filename = os.path.split(session['file_location'])
+		try:
+			return send_from_directory(path, filename, as_attachment=True)
+		except Exception as e:
+			return render_template('error.html', error_message="Cattle was not able to find your json file. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS)
 
 # Error handlers
 
