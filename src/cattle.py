@@ -122,6 +122,7 @@ def upload_files():
 		json_filename = secure_filename(json_file.filename)
 		if csv_filename.endswith('.tsv'):
 			csv_filename = csv_filename[:-3]+"csv"
+		if json_filename.endswith("tsv-metadata.json")
 			json_filename = json_filename[:-17]+"csv-metadata.json"
 
 		if csv_filename == '' or json_filename == '':
