@@ -22,6 +22,7 @@ case ${1} in
         sed -i "s/xxx/${AUTH_TOKEN}/" src/cattle.py
         sed -i "s/xyxyxy/${ERROR_MAIL_ADDRESS}/" src/cattle.py
         sed -i "s/zzz/${SECRET_SESSION_KEY}/" src/cattle.py
+        sed -i "s/00001/${N_GUNICORN_WORKERS}/" src/gunicorn_config.py
 
         gunicorn -c src/gunicorn_config.py src.cattle:app
         # python src/cattle.py

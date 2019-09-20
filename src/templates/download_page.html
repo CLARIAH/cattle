@@ -1,0 +1,14 @@
+{% include 'header.html' %}
+
+<div class="inner">
+	{% if ready_for_download == true %}
+		Your file has finished conversion and can be download!<br />
+		<a class="btn btn-primary" style="margin-bottom: 20px" href="{{ url_for('download_linked_data', combined_hash=hash) }}">Download!</a>
+	{% else %}
+		Conversion is still under way, please give the cows some more time. <br />
+		When the conversion is finished it will be available at the following link:<br />
+		<a href="{{ url_for('download_page', combined_hash=hash) }}">{{ url_for('download_page', combined_hash=hash, _external=True).split(',')[1] }}</a>
+	{% endif %}
+</div>
+
+{% include 'footer.html' %}
