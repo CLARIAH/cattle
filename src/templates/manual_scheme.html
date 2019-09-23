@@ -1,0 +1,59 @@
+{% include 'header.html' %}
+
+			<div class="inner">
+				<!-- <p class="lead"> You reach an intersection, there are three paths you can chose...</p> -->
+
+
+				<p class="h4">Download and re-upload your JSON file here to create a custom scheme.</p>
+
+				<div style="border:1px solid #ccc;">
+					<div style="margin-top: 30px; margin-bottom: 30px">
+						<label for="download_button">download your json scheme:</label><br />
+						<a class="btn btn-primary" style="margin-bottom: 20px" href="/download_json" name="download_button">download JSON</a><br />
+						<!-- and upload your json scheme:<br /> -->
+						<!-- <input type="submit" class="btn btn-primary" value="Upload" id="schemaupload" formaction="/upload_json"> -->
+      				    <form method="post" enctype="multipart/form-data" data-toggle="validator"><!--  action="/build_convert"> --><!--  target="_blank"> -->
+							<div class="form-group">
+								<label for="json">and upload your json scheme:</label>
+								<center><input type="file" class="form-control-file" name="json" id="json"></center>
+								<input type="submit" class="btn btn-primary" value="Upload JSON" id="jsonupload" formaction="/upload_json">
+							</div>
+						</form>
+					</div>
+				</div>
+
+				<div style="margin-top: 30px; margin-bottom: 30px">
+				</div>
+
+				<p class="h4">Or edit the JSON with Ruminator.</p>
+
+				<div style="border:1px solid #ccc;">
+					<div style="margin-top: 30px; margin-bottom: 30px">
+						<center>Start ruminating with: <a href="{{ url_for('ruminator') }}">{{currentFile}}</a> </center>
+						<a href="{{ url_for('ruminator') }}"> <!--maybe without the target, so it will open in the current tab-->
+							<img src="{{url_for('.static', filename='img/cow-left.png')}}" style="margin:auto; width:10%;display:block; margin-top: 10px">
+						</a>
+						<center>(instructions on how to edit this JSON can be found <a href="https://github.com/CLARIAH/COW/wiki">here</a>)</center>
+					</div>
+				</div>
+
+				<div style="margin-top: 30px; margin-bottom: 30px">
+				</div>
+
+			</div>
+
+<script>
+$(document).ready(function() {
+  $('#json').val() ? $('#jsonupload').prop('disabled', false) : $('#jsonupload').prop('disabled', true);
+});
+
+$('#json').change(function() {
+  $(this).val() ? $('#jsonupload').prop('disabled', false) : $('#jsonupload').prop('disabled', true);
+});
+
+</script>
+
+{% include 'footer.html' %}
+
+
+

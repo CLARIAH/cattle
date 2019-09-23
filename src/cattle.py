@@ -122,7 +122,7 @@ def upload_files():
 		json_filename = secure_filename(json_file.filename)
 		if csv_filename.endswith('.tsv'):
 			csv_filename = csv_filename[:-3]+"csv"
-		if json_filename.endswith("tsv-metadata.json")
+		if json_filename.endswith("tsv-metadata.json"):
 			json_filename = json_filename[:-17]+"csv-metadata.json"
 
 		if csv_filename == '' or json_filename == '':
@@ -208,7 +208,7 @@ def build(internal=False):
 		# return cattle()
 		# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 		if not internal:
-			return render_template('build.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
+			return render_template('decide_scheme.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
 		else:
 			return 0
 	else:
@@ -269,7 +269,7 @@ def convert_local():
 	clean_session()
 	return resp, 200
 
-@app.route('/build_convert', methods=['GET', 'POST'])
+@app.route('/build_convert', methods=['GET', 'POST']) #remove in new setup??????
 def build_convert():
 	if 'json' not in request.files:
 		build(True)
@@ -343,6 +343,33 @@ def download_json():
 			return send_from_directory(path, filename, as_attachment=True)
 		except Exception as e:
 			return render_template('error.html', error_message="Cattle was not able to find your json file. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS)
+
+@app.route('/upload_json', methods=['GET', 'POST'])
+def upload_json(): #expects a session key is already available, and json already exists
+	cattlelog.info("Uploading json file...")
+	path = os.path.join(UPLOAD_FOLDER_BASE, session['user_location'])
+
+	if 'json' in request.files:
+		json_file = request.files['json']
+
+		if json_file:
+			filepath = session['file_location']
+			os.remove(filepath)
+			json_file.save(filepath)
+
+			cattlelog.debug("new json uploaded successfully")
+		return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
+	else:
+		cattlelog.debug("ERROR: could not find the new json file.")
+		return 0
+
+@app.route('/manual_scheme', methods=['GET', 'POST'])
+def manual_scheme():
+	if 'file_location' in session:
+		return render_template('manual_scheme.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
+	else:
+		return render_template('manual_scheme.html', currentFile="")
+
 
 # Error handlers
 

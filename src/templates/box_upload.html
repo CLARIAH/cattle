@@ -6,15 +6,7 @@
         <center><input type="file" class="form-control-file" name="csv" id="csv" data-filesize="1.5">
         <div class="help-block with-errors" style="margin-bottom: 20px"></div></center>
         <input type="submit" class="btn btn-primary" value="Upload" id="schemaupload" formaction="/build">
-      <!-- </div> -->
-    <!-- </form> -->
-  <!-- </p> -->
-    <!-- <form method="post" enctype="multipart/form-data" action="/convert_local"> -->
-      <!-- <div class="form-group"> -->
-        <!-- <center> -->
-          <!-- Working on: {{currentFile}}<br /> -->
-        <input type="submit" class="btn btn-primary" value="Convert" id="convertupload" formaction="/build_convert">
-        <!-- </center> -->
+        <!-- <input type="submit" class="btn btn-primary" value="Convert" id="convertupload" formaction="/build_convert"> -->
         <br />
           <div align="right">
         <div style="display:inline-block; padding:5pt">
@@ -58,42 +50,12 @@
 <script>
 $(document).ready(function() {
   $('#csv').val() ? $('#schemaupload').prop('disabled', false) : $('#schemaupload').prop('disabled', true);
-  $('#csv').val() ? $('#convertupload').prop('disabled', false) : $('#convertupload').prop('disabled', true);
+  // $('#csv').val() ? $('#convertupload').prop('disabled', false) : $('#convertupload').prop('disabled', true);
 });
 
 $('#csv').change(function() {
   $(this).val() ? $('#schemaupload').prop('disabled', false) : $('#schemaupload').prop('disabled', true);
-  $(this).val() ? $('#convertupload').prop('disabled', false) : $('#convertupload').prop('disabled', true);
+  // $(this).val() ? $('#convertupload').prop('disabled', false) : $('#convertupload').prop('disabled', true);
 });
-
-// $('form[data-toggle="validator"]').validator({
-//   custom: {
-//     filesize: function ($el) {
-//       var maxBytes = $el.data('filesize') * 1024 * 1024;
-//       console.log($el[0].files[0].size);
-//       $('#schemaupload').prop('disabled', false);
-//       $('#convertupload').prop('disabled', false);
-//       // if ($el[0].files[0].size > maxBytes) {
-//       // //  // $('#schemaupload').prop('disabled', true);
-//       // //  $('#schemaupload').prop('disabled', false);
-//       // //  // $('#convertupload').prop('disabled', true);
-//       // //  $('#convertupload').prop('disabled', false);
-//       //   return "Files larger then " + $el.data('filesize') + " MB will take longer, a download link will be supplied to retrieve the file."
-//       // }
-//     }
-    
-//     // //custom file type validation
-//     // filetype: function ($el) {
-//     //   var acceptableTypes = $el.prop('accept').split(',');
-//     //   var fileType = $el[0].files[0].type;
-     
-//     //   if (!$.inArray(fileType, acceptableTypes)) {
-//     //     return "Invalid file type"
-//     //   }
-    
-    
-//     // }
-//   }
-// })
 
 </script>
