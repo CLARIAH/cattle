@@ -97,12 +97,21 @@ def create_json_loc_cookie(json_loc):
 	cattlelog.debug("a new file_location has been created: {}".format(session['file_location']))
 	# return session['file_location'] #unnecesary
 
+def delete_file(path):
+	path_to, filename = os.path.split(path)
+	try:
+		os.remove(path)
+		cattlelog.debug("Finished removing: {}".format(filename))
+	except:
+		cattlelog.debug("Cattle was not able to delete \"{}\"".format(filename))
+
 def clean_session():
 	session.pop('file_location', None)
 	app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 
 def upload_files():
 	cattlelog.info("Uploading csv and json files...")
+	delete_data() #delete old data if there is any
 	create_user_cookie()
 	path = os.path.join(UPLOAD_FOLDER_BASE, session['user_location'])
 
@@ -167,6 +176,7 @@ def build(internal=False):
 	cattlelog.info("Received request to build schema")
 	cattlelog.debug("Headers: {}".format(request.headers))
 
+	delete_data() #delete old data if there is any
 	create_user_cookie()
 	# app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], session['user_location'])
 	path = os.path.join(UPLOAD_FOLDER_BASE , session['user_location'])
@@ -274,11 +284,11 @@ def download_page(combined_hash):
 		csv_files = [f for f in os.listdir(file_location) if f.endswith(".csv")]
 		json_files = [f for f in os.listdir(file_location) if f.endswith(".json")]
 	except:
-		return render_template('error.html', error_message="This hash [{}] does not resolve to a file.".format(combined_hash), error_mail_address=ERROR_MAIL_ADDRESS)
+		return render_template('error.html', error_message="This hash [{}] does not resolve to a file.".format(combined_hash), error_mail_address=ERROR_MAIL_ADDRESS, currentFile="")
 	if len(csv_files) < 1 and len(json_files) < 1: 
-		return render_template('download_page.html', ready_for_download=True, hash=combined_hash)
+		return render_template('download_page.html', ready_for_download=True, hash=combined_hash, currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
 	else:
-		return render_template('download_page.html', ready_for_download=False, hash=combined_hash)
+		return render_template('download_page.html', ready_for_download=False, hash=combined_hash, currentFile="")
 
 @app.route('/download_/<combined_hash>', methods=['POST'])
 def download_linked_data(combined_hash):
@@ -289,7 +299,7 @@ def download_linked_data(combined_hash):
 	try:
 		rdf_file = [f for f in os.listdir(file_location) if f.endswith(".csv.nq")]
 	except:
-		return render_template('error.html', error_message="This hash [{}] does not resolve to a file.".format(combined_hash), error_mail_address=ERROR_MAIL_ADDRESS)
+		return render_template('error.html', error_message="This hash [{}] does not resolve to a file.".format(combined_hash), error_mail_address=ERROR_MAIL_ADDRESS, currentFile="")
 
 	rdf_file = rdf_file[0]
 	filename_csv = rdf_file[:-3]
@@ -322,7 +332,7 @@ def download_linked_data(combined_hash):
 		# return send_from_directory(file_location, rdf_file[0], as_attachment=True)
 		return resp, 200
 	except Exception as e:
-		return render_template('error.html', error_message="Cattle was not able to find your linked data file. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS)
+		return render_template('error.html', error_message="Cattle was not able to find your linked data file. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS, currentFile="")
 
 
 @app.route('/download_json', methods=['GET'])
@@ -332,7 +342,7 @@ def download_json():
 		try:
 			return send_from_directory(path, filename, as_attachment=True)
 		except Exception as e:
-			return render_template('error.html', error_message="Cattle was not able to find your json file. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS)
+			return render_template('error.html', error_message="Cattle was not able to find your json file. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS, currentFile="")
 
 @app.route('/upload_json', methods=['GET', 'POST'])
 def upload_json(): #expects a session key is already available, and json already exists
@@ -348,7 +358,6 @@ def upload_json(): #expects a session key is already available, and json already
 			json_file.save(filepath)
 
 			cattlelog.debug("new json uploaded successfully")
-		# return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
 		return convert_local()
 	else:
 		cattlelog.debug("ERROR: could not find the new json file.")
@@ -361,27 +370,32 @@ def manual_scheme():
 	else:
 		return render_template('manual_scheme.html', currentFile="")
 
-# @app.route('/manual_scheme', methods=['GET', 'POST'])
-# def delete_data():
-# 	json_path = session['file_location']
-# 	csv_path = json_path[:-len("-metadata.json")]
+@app.route('/delete_data', methods=['GET', 'POST'])
+def delete_data():
+	try:
+		json_path = session['file_location']
+	except Exception as e:
+		return render_template('error.html', error_message="There does not seem to be any data to remove. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS, currentFile="") 
+	csv_path = json_path[:-len("-metadata.json")]
+	rdf_path = csv_path + ".nq"
 
-# 	os.remove(csv_path)
-# 	os.remove(json_path)
-# 	cattlelog.info('Finished removing the csv file and json file.')
+	delete_file(csv_path)
+	delete_file(json_path)
+	delete_file(rdf_path)
 
-# 	clean_session()
+	clean_session()
 
+	return render_template('delete_data.html', currentFile="")
 
 # Error handlers
 
 @app.errorhandler(404)
 def pageNotFound(error):
-	return render_template('error.html', error_message="Page not found", error_mail_address=ERROR_MAIL_ADDRESS)
+	return render_template('error.html', error_message="Page not found", error_mail_address=ERROR_MAIL_ADDRESS, currentFile="")
 
 @app.errorhandler(500)
 def pageNotFound(error):
-	return render_template('error.html', error_message=error.message, error_mail_address=ERROR_MAIL_ADDRESS)
+	return render_template('error.html', error_message=error.message, error_mail_address=ERROR_MAIL_ADDRESS, currentFile="")
 
 if __name__ == '__main__':
 	app.run(port=8088, debug=False)
