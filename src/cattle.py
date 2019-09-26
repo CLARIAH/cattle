@@ -77,15 +77,6 @@ def create_random_id(size=10):
 	chars = ascii_uppercase + digits
 	return ''.join(random.choice(chars) for _ in range(size))
 
-def remove_files(path):
-	csv_path = path
-	json_path = path + '-metadata.json'
-	print('Removing the csv file and json file...')
-
-	os.remove(csv_path)
-	os.remove(json_path)
-	print('Finished removing the csv file and json file.')
-
 # create cookie for this specific user
 # in order to distinquish different json files that originated the same csv file.
 def create_user_cookie():
@@ -215,12 +206,12 @@ def build(internal=False):
 		cattlelog.error('No file supplied or wrong file type')
 		return resp, 415
 
-	return resp, 200
+	# return resp, 200
 
-@app.route('/convert_local', methods=['POST'])
+@app.route('/convert_local', methods=['POST', 'GET'])
 def convert_local():
 	cattlelog.info("Received request to convert files locally")
-	cattlelog.debug("Headers: {}".format(request.headers))
+	# cattlelog.debug("Headers: {}".format(request.headers))
 
 	app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE #because otherwise it nests after it errors
 
@@ -231,61 +222,30 @@ def convert_local():
 	if os.path.exists(os.path.join(path, filename_csv)) and os.path.exists(os.path.join(path, filename_json)):
 		cattlelog.debug("Running COW convert")
 		cattlelog.debug("The size of the file is {} Bytes.".format(os.stat(os.path.join(path, filename_csv)).st_size))
-		if os.stat(os.path.join(path, filename_csv)).st_size > (FILE_SIZE_THRESHOLD * 1024 * 1024):
-			create_thread(os.path.join(path, filename_csv), cattlelog)
-			path_list = path.split(os.sep)
-			cattlelog.debug("path_list: {}".format(path_list))
-			return download_page(path_list[-3] + "." + path_list[-1])
-		else:
-			COW(mode='convert', files=[os.path.join(path, filename_csv)])
-			cattlelog.debug("Convert finished")
-		try:
-			with open(os.path.join(path, filename_csv + '.nq')) as nquads_file:
-				g = ConjunctiveGraph()
-				g.parse(nquads_file, format='nquads')
-		except IOError:
-			raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
-		if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
-			if request.form.get('zip'): #Requested compressed download
-				out = StringIO.StringIO()
-				with gzip.GzipFile(fileobj=out, mode="w") as f:
-				  f.write(g.serialize(format=request.form.get('formatSelect')))
-				resp = make_response(out.getvalue())
-				resp.headers['Content-Type'] = 'application/gzip'
-				resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + EXTENSION_DICT[request.form.get('formatSelect')] + '.gz'
-			else:
-				resp = make_response(g.serialize(format=request.form.get('formatSelect')))
-				resp.headers['Content-Type'] = MIME_TYPE_DICT[request.form.get('formatSelect')]
-				resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + EXTENSION_DICT[request.form.get('formatSelect')]
-		elif request.headers['Accept'] in ACCEPTED_TYPES:
-			resp = make_response(g.serialize(format=request.headers['Accept']))
-			resp.headers['Content-Type'] = request.headers['Accept']
-		else:
-			return 'Requested format unavailable', 415
+		# if os.stat(os.path.join(path, filename_csv)).st_size > (FILE_SIZE_THRESHOLD * 1024 * 1024):
+		create_thread(os.path.join(path, filename_csv), cattlelog)
+		path_list = path.split(os.sep)
+		cattlelog.debug("path_list: {}".format(path_list))
+		return download_page(path_list[-3] + "." + path_list[-1])
 	else:
 		raise Exception('No files supplied, wrong file types, or unexpected file extensions')
 
-	remove_files(os.path.join(path, filename_csv))
-	clean_session()
-	return resp, 200
-
-@app.route('/build_convert', methods=['GET', 'POST']) #remove in new setup??????
+@app.route('/build_convert', methods=['GET', 'POST'])
 def build_convert():
 	if 'json' not in request.files:
-		build(True)
+		return build()
 	else:
 		cattlelog.debug("found a json!:")
 		cattlelog.debug(request.files['json'])
 		upload_files()
+		return convert_local()
 
-	return convert_local()
-
-@app.route('/convert', methods=['GET', 'POST'])
-def convert():
-	if 'file_location' in session:
-		return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
-	else:
-		return render_template('convert.html', currentFile="")
+# @app.route('/convert', methods=['GET', 'POST'])
+# def convert():
+# 	if 'file_location' in session:
+# 		return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
+# 	else:
+# 		return render_template('convert.html', currentFile="")
 
 @app.route('/ruminator', methods=['GET', 'POST'])
 def ruminator():
@@ -320,17 +280,47 @@ def download_page(combined_hash):
 	else:
 		return render_template('download_page.html', ready_for_download=False, hash=combined_hash)
 
-@app.route('/download_/<combined_hash>')
+@app.route('/download_/<combined_hash>', methods=['POST'])
 def download_linked_data(combined_hash):
 	cattlelog.debug("the hash: {}".format(combined_hash))
 	user_hash, file_hash = combined_hash.split('.')
 	file_location = os.path.join(UPLOAD_FOLDER_BASE, user_hash, 'web_interface', file_hash)
+
 	try:
 		rdf_file = [f for f in os.listdir(file_location) if f.endswith(".csv.nq")]
 	except:
-		return render_template('error.html', error_message="This hash [{}] does not resolve to a file.".format(combined_hash), error_mail_address=ERROR_MAIL_ADDRESS)		
+		return render_template('error.html', error_message="This hash [{}] does not resolve to a file.".format(combined_hash), error_mail_address=ERROR_MAIL_ADDRESS)
+
+	rdf_file = rdf_file[0]
+	filename_csv = rdf_file[:-3]
+
 	try:
-		return send_from_directory(file_location, rdf_file[0], as_attachment=True)
+		with open(os.path.join(file_location, rdf_file)) as nquads_file:
+			g = ConjunctiveGraph()
+			g.parse(nquads_file, format='nquads')
+	except IOError:
+		raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
+	if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
+		if request.form.get('zip'): #Requested compressed download
+			out = StringIO.StringIO()
+			with gzip.GzipFile(fileobj=out, mode="w") as f:
+			  f.write(g.serialize(format=request.form.get('formatSelect')))
+			resp = make_response(out.getvalue())
+			resp.headers['Content-Type'] = 'application/gzip'
+			resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + EXTENSION_DICT[request.form.get('formatSelect')] + '.gz'
+		else:
+			resp = make_response(g.serialize(format=request.form.get('formatSelect')))
+			resp.headers['Content-Type'] = MIME_TYPE_DICT[request.form.get('formatSelect')]
+			resp.headers['Content-Disposition'] = 'attachment; filename=' + filename_csv + EXTENSION_DICT[request.form.get('formatSelect')]
+	elif request.headers['Accept'] in ACCEPTED_TYPES:
+		resp = make_response(g.serialize(format=request.headers['Accept']))
+		resp.headers['Content-Type'] = request.headers['Accept']
+	else:
+		return 'Requested format unavailable', 415
+
+	try:
+		# return send_from_directory(file_location, rdf_file[0], as_attachment=True)
+		return resp, 200
 	except Exception as e:
 		return render_template('error.html', error_message="Cattle was not able to find your linked data file. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS)
 
@@ -358,7 +348,8 @@ def upload_json(): #expects a session key is already available, and json already
 			json_file.save(filepath)
 
 			cattlelog.debug("new json uploaded successfully")
-		return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
+		# return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
+		return convert_local()
 	else:
 		cattlelog.debug("ERROR: could not find the new json file.")
 		return 0
@@ -369,6 +360,17 @@ def manual_scheme():
 		return render_template('manual_scheme.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
 	else:
 		return render_template('manual_scheme.html', currentFile="")
+
+# @app.route('/manual_scheme', methods=['GET', 'POST'])
+# def delete_data():
+# 	json_path = session['file_location']
+# 	csv_path = json_path[:-len("-metadata.json")]
+
+# 	os.remove(csv_path)
+# 	os.remove(json_path)
+# 	cattlelog.info('Finished removing the csv file and json file.')
+
+# 	clean_session()
 
 
 # Error handlers

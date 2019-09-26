@@ -9,9 +9,31 @@
 	<p class="h4">Step 1: Upload your csv data.</p> <!-- or .tsv -->
 
 
-	{% include 'box_upload.html' %}
+	<div style="border:1px solid #ccc;">
+		<p class="lead">
+			<form method="post" enctype="multipart/form-data" data-toggle="validator"><!--  action="/build_convert"> --><!--  target="_blank"> -->
+				<div class="form-group">
+					<label for="csv">CSV file</label>
+					<center><input type="file" class="form-control-file" name="csv" id="csv" data-filesize="1.5">
+					<div class="help-block with-errors" style="margin-bottom: 20px"></div></center>
+					<input type="submit" class="btn btn-primary" value="Upload" id="schemaupload" formaction="/build_convert">
+					<br />
+					<div align="right">
+						<div style="display:inline-block; padding:5pt">
+							<button class="btn-collapse collapsed" type="button" data-toggle="collapse" data-target="#collapseForm" aria-expanded="false" aria-controls="collapseForm" color="red">
+							Add a scheme?
+							</button>
+							<div class="collapse" id="collapseForm" aria-expanded="false" style="height: 0px;" align="left">
+								<label for="json">Manual JSON:</label><input type="file" class="form-control-file" name="json" id="json" text="json here"><br />
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</p>
+	</div>
 
-	<div style="margin-top: 30px; margin-bottom: 30px">
+<div style="margin-top: 30px; margin-bottom: 30px">
 	</div>
 </div>
 
@@ -32,6 +54,13 @@ window.cookieconsent.initialise({
   "theme": "classic",
   "position": "bottom-right"
 })});
+$(document).ready(function() {
+	$('#csv').val() ? $('#schemaupload').prop('disabled', false) : $('#schemaupload').prop('disabled', true);
+});
+
+$('#csv').change(function() {
+	$(this).val() ? $('#schemaupload').prop('disabled', false) : $('#schemaupload').prop('disabled', true);
+});
 </script>
 
 {% include 'footer.html' %}
