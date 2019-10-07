@@ -1,40 +1,52 @@
 {% include 'header.html' %}
 
-
-
 <div class="inner">
-			<!--img src="{{url_for('.static', filename='cattle_logo_01.png')}}" -->
-	<p class="lead"> <b>cattle</b> {{version}}, an instance of a <a href="https://github.com/CLARIAH/COW" target="_blank">COW</a> Web service.</p>
+      <!--img src="{{url_for('.static', filename='cattle_logo_01.png')}}" -->
+  <p class="lead"> <b>cattle</b> {{version}}, an instance of a <a href="https://github.com/CLARIAH/COW" target="_blank">COW</a> Web service.</p>
 
-	<p class="h4">Step 1: Upload your csv data.</p> <!-- or .tsv -->
+  <p class="h4">Upload your csv data.</p> <!-- or .tsv -->
 
+  <div id="drop_zone" class="drop_zone">
+    <div style="margin-top: 90px; margin-bottom: 90px">
+      <p id="drop_zone_text">You can drop you CSV file here!</p>
+    </div>
+  </div>
 
-	<div style="border:1px solid #ccc;">
-		<p class="lead">
-			<form method="post" enctype="multipart/form-data" data-toggle="validator"><!--  action="/build_convert"> --><!--  target="_blank"> -->
-				<div class="form-group">
-					<label for="csv">CSV file</label>
-					<center><input type="file" class="form-control-file" name="csv" id="csv" data-filesize="1.5">
-					<div class="help-block with-errors" style="margin-bottom: 20px"></div></center>
-					<input type="submit" class="btn btn-primary" value="Upload" id="schemaupload" formaction="/build_convert">
-					<br />
-					<div align="right">
-						<div style="display:inline-block; padding:5pt">
-							<button class="btn-collapse collapsed" type="button" data-toggle="collapse" data-target="#collapseForm" aria-expanded="false" aria-controls="collapseForm" color="red">
-							Add a scheme?
-							</button>
-							<div class="collapse" id="collapseForm" aria-expanded="false" style="height: 0px;" align="left">
-								<label for="json">Manual JSON:</label><input type="file" class="form-control-file" name="json" id="json" text="json here"><br />
-							</div>
-						</div>
-					</div>
-				</div>
-			</form>
-		</p>
-	</div>
+  <div style="margin-top: 30px; margin-bottom: 30px"></div>
 
-<div style="margin-top: 30px; margin-bottom: 30px">
-	</div>
+    <div align="right">
+      <button class="btn-collapse collapsed" type="button" data-toggle="collapse" data-target="#old_school_upload" aria-expanded="false" aria-controls="old_school_upload">
+        Old-School upload
+      </button>
+      <div class="collapse" id="old_school_upload" aria-expanded="false" style="height: 0px;" align="center">
+        <p class="lead">
+          <div style="border:1px solid #ccc;">
+            <div style="margin-top: 30px;">
+              <form method="post" enctype="multipart/form-data" data-toggle="validator"><!--  action="/build_convert"> --><!--  target="_blank"> -->
+                <div class="form-group">
+                  <label for="csv">CSV file</label>
+                  <center><input type="file" class="form-control-file" name="csv" id="csv" data-filesize="1.5">
+                  <div class="help-block with-errors" style="margin-bottom: 20px"></div></center>
+                  <input type="submit" class="btn btn-primary" value="Upload" id="schemaupload" formaction="/build_convert">
+                  <br />
+                  <div align="right">
+                    <div style="display:inline-block; padding:5pt">
+                      <button class="btn-collapse collapsed" type="button" data-toggle="collapse" data-target="#collapseForm" aria-expanded="false" aria-controls="collapseForm">
+                      Add a scheme?
+                      </button>
+                      <div class="collapse" id="collapseForm" aria-expanded="false" style="height: 0px;" align="left">
+                        <label for="json">Manual JSON:</label><input type="file" class="form-control-file" name="json" id="json" text="json here"><br />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </p>
+      </div>
+    </div>
+
 </div>
 
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css" />
@@ -55,12 +67,14 @@ window.cookieconsent.initialise({
   "position": "bottom-right"
 })});
 $(document).ready(function() {
-	$('#csv').val() ? $('#schemaupload').prop('disabled', false) : $('#schemaupload').prop('disabled', true);
+  $('#csv').val() ? $('#schemaupload').prop('disabled', false) : $('#schemaupload').prop('disabled', true);
 });
 
 $('#csv').change(function() {
-	$(this).val() ? $('#schemaupload').prop('disabled', false) : $('#schemaupload').prop('disabled', true);
+  $(this).val() ? $('#schemaupload').prop('disabled', false) : $('#schemaupload').prop('disabled', true);
 });
 </script>
+
+<script src="{{url_for('.static', filename='js/drag_and_drop.js')}}"></script>
 
 {% include 'footer.html' %}

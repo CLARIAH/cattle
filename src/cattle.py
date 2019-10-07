@@ -172,7 +172,7 @@ def version():
 	return v
 
 @app.route('/build', methods=['POST'])
-def build(internal=False):
+def build():
 	cattlelog.info("Received request to build schema")
 	cattlelog.debug("Headers: {}".format(request.headers))
 
@@ -208,10 +208,7 @@ def build(internal=False):
 		# resp = make_response(jsonify(json_schema)) #no longer return the json (only to ruminator)
 		# return cattle()
 		# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
-		if not internal:
-			return render_template('decide_scheme.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
-		else:
-			return 0
+		return render_template('decide_scheme.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
 	else:
 		cattlelog.error('No file supplied or wrong file type')
 		return resp, 415
