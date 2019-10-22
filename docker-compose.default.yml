@@ -13,4 +13,3 @@ services:
      - AUTH_TOKEN=xxx
      - MAILGUN_AUTH_TOKEN=yyy
      - ERROR_MAIL_ADDRESS=xyxyxy
-     - N_GUNICORN_WORKERS=00001

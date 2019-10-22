@@ -11,7 +11,7 @@ import subprocess
 import json
 from rdflib import ConjunctiveGraph
 from cow_csvw.csvw_tool import COW
-import StringIO
+from io import BytesIO #changed for python3
 import gzip
 import shutil
 import traceback
@@ -83,7 +83,7 @@ def create_user_cookie():
 	if 'user_location' in session:
 		cattlelog.debug('a user directory is already available %s' % session['user_location'])
 	else: #TODO: check if the random id already exists?
-		session['user_location'] = create_random_id()
+		session['user_location'] = str(create_random_id())
 
 # create cookie for this json file
 def create_json_loc_cookie(json_loc):
@@ -92,10 +92,8 @@ def create_json_loc_cookie(json_loc):
 		clean_session()
 	else:
 		cattlelog.debug("No previous file_location was found.")
-	cattlelog.debug("creating a new file_location...")
-	session['file_location'] = json_loc
+	session['file_location'] = str(json_loc)
 	cattlelog.debug("a new file_location has been created: {}".format(session['file_location']))
-	# return session['file_location'] #unnecesary
 
 def delete_file(path):
 	path_to, filename = os.path.split(path)
@@ -107,6 +105,7 @@ def delete_file(path):
 
 def clean_session():
 	session.pop('file_location', None)
+	session.pop('user_location', None)
 	app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 
 def upload_files():
@@ -151,12 +150,12 @@ def cattle():
 	cattlelog.info("Received request to render index")
 	if 'file_location' in session:
 		try:
-			resp = make_response(render_template('index.html', version=subprocess.check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT).strip(), currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")]))
+			resp = make_response(render_template('index.html', version=(subprocess.check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT)).decode(), currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")]))
 		except:	
 			resp = make_response(render_template('index.html', version='?.??', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")]))
 	else:
 		try:
-			resp = make_response(render_template('index.html', version=subprocess.check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT).strip(), currentFile=''))
+			resp = make_response(render_template('index.html', version=(subprocess.check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT)).decode(), currentFile=''))
 		except:	
 			resp = make_response(render_template('index.html', version='?.??', currentFile=''))
 
@@ -179,6 +178,7 @@ def build():
 	delete_data() #delete old data if there is any
 	create_user_cookie()
 	# app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], session['user_location'])
+	cattlelog.debug("type of this session object: {}".format(type(session['user_location'])))
 	path = os.path.join(UPLOAD_FOLDER_BASE , session['user_location'])
 
 	resp = make_response()
@@ -208,6 +208,7 @@ def build():
 		# resp = make_response(jsonify(json_schema)) #no longer return the json (only to ruminator)
 		# return cattle()
 		# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
+		cattlelog.debug("BASWNAME: {}".format(session['file_location']))
 		return render_template('decide_scheme.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
 	else:
 		cattlelog.error('No file supplied or wrong file type')
@@ -285,6 +286,7 @@ def download_page(combined_hash):
 	if len(csv_files) < 1 and len(json_files) < 1: 
 		return render_template('download_page.html', ready_for_download=True, hash=combined_hash, currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
 	else:
+		cattlelog.debug("combined hash: {}".format(combined_hash))
 		return render_template('download_page.html', ready_for_download=False, hash=combined_hash, currentFile="")
 
 @app.route('/download_/<combined_hash>', methods=['POST'])
@@ -302,14 +304,13 @@ def download_linked_data(combined_hash):
 	filename_csv = rdf_file[:-3]
 
 	try:
-		with open(os.path.join(file_location, rdf_file)) as nquads_file:
-			g = ConjunctiveGraph()
-			g.parse(nquads_file, format='nquads')
+		g = ConjunctiveGraph()
+		g.parse(location=os.path.join(file_location, rdf_file), format='nquads')
 	except IOError:
 		raise IOError("COW could not generate any RDF output. Please check the syntax of your CSV and JSON files and try again.")
 	if not request.headers['Accept'] or '*/*' in request.headers['Accept']:
 		if request.form.get('zip'): #Requested compressed download
-			out = StringIO.StringIO()
+			out = BytesIO()
 			with gzip.GzipFile(fileobj=out, mode="w") as f:
 			  f.write(g.serialize(format=request.form.get('formatSelect')))
 			resp = make_response(out.getvalue())
@@ -326,7 +327,6 @@ def download_linked_data(combined_hash):
 		return 'Requested format unavailable', 415
 
 	try:
-		# return send_from_directory(file_location, rdf_file[0], as_attachment=True)
 		return resp, 200
 	except Exception as e:
 		return render_template('error.html', error_message="Cattle was not able to find your linked data file. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS, currentFile="")
@@ -392,7 +392,7 @@ def pageNotFound(error):
 
 @app.errorhandler(500)
 def pageNotFound(error):
-	return render_template('error.html', error_message=error.message, error_mail_address=ERROR_MAIL_ADDRESS, currentFile="")
+	return render_template('error.html', error_message=error, error_mail_address=ERROR_MAIL_ADDRESS, currentFile="")
 
 if __name__ == '__main__':
 	app.run(port=8088, debug=False)

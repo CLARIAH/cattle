@@ -45,7 +45,8 @@
 	{% else %}
 		Conversion is still under way, please give the cows some more time. <br />
 		When the conversion is finished it will be available at the following link:<br />
-		<a href="{{ url_for('download_page', combined_hash=hash) }}">{{ url_for('download_page', combined_hash=hash, _external=True).split(',')[1] }}</a>
+		<!-- <a href="{{ url_for('download_page', combined_hash=hash) }}">{{ url_for('download_page', combined_hash=hash, _external=True).split(',')[1] }}</a> -->
+		<a href="{{ url_for('download_page', combined_hash=hash) }}">{{ url_for('download_page', combined_hash=hash, _external=True) }}</a>
 	{% endif %}
 </div>
 
