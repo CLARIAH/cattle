@@ -179,7 +179,7 @@ def build():
 	create_user_cookie()
 	# app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], session['user_location'])
 	cattlelog.debug("type of this session object: {}".format(type(session['user_location'])))
-	path = os.path.join(UPLOAD_FOLDER_BASE , session['user_location'])
+	path = os.path.join(UPLOAD_FOLDER_BASE , str(session['user_location']))
 
 	resp = make_response()
 
