@@ -62,30 +62,29 @@ MIME_TYPE_DICT = {"n3": "text/n3",
 	"xml": "application/rdf+xml",
 	"json-ld": "application/ld+json"} 
 
-AUTH_TOKEN = "xxx"
 SECRET_SESSION_KEY = b"zzz"
 app.secret_key = SECRET_SESSION_KEY
 ERROR_MAIL_ADDRESS = "xyxyxy"
-FILE_SIZE_THRESHOLD = 1.0 #in MB
 
 # Util functions
 
 def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# returns a string of random letters and numbers.
 def create_random_id(size=10):
 	chars = ascii_uppercase + digits
 	return ''.join(random.choice(chars) for _ in range(size))
 
-# create cookie for this specific user
-# in order to distinquish different json files that originated the same csv file.
+# add a random id to identify this specific user in order to distinquish 
+# different json files that originated from the same csv file.
 def create_user_cookie():
 	if 'user_location' in session:
 		cattlelog.debug('a user directory is already available %s' % session['user_location'])
-	else: #TODO: check if the random id already exists?
+	else:
 		session['user_location'] = str(create_random_id())
 
-# create cookie for this json file
+# add the location of the json file to the current session.
 def create_json_loc_cookie(json_loc):
 	if 'file_location' in session:
 		cattlelog.debug("deleting the old file_location...")
@@ -95,6 +94,7 @@ def create_json_loc_cookie(json_loc):
 	session['file_location'] = str(json_loc)
 	cattlelog.debug("a new file_location has been created: {}".format(session['file_location']))
 
+# delete a file located at a given location.
 def delete_file(path):
 	path_to, filename = os.path.split(path)
 	try:
@@ -103,11 +103,13 @@ def delete_file(path):
 	except:
 		cattlelog.debug("Cattle was not able to delete \"{}\"".format(filename))
 
+# remove all the user specific information form the session.
 def clean_session():
 	session.pop('file_location', None)
 	session.pop('user_location', None)
 	app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
 
+# used to upload csv and json file when both are uploaded.
 def upload_files():
 	cattlelog.info("Uploading csv and json files...")
 	delete_data() #delete old data if there is any
@@ -145,11 +147,12 @@ def upload_files():
 
 # Routes
 
+# returns the main index of cattle.
 @app.route('/', methods=['GET', 'POST'])
 def cattle():
 	cattlelog.info("Received request to render index")
 	if 'file_location' in session:
-		try:
+		try: # in some (offline) cases there was a problem with retrieving the version of cow, this try/except removes that problem.
 			resp = make_response(render_template('index.html', version=(subprocess.check_output(['cow_tool', '--version'], stderr=subprocess.STDOUT)).decode(), currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")]))
 		except:	
 			resp = make_response(render_template('index.html', version='?.??', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")]))
@@ -170,6 +173,7 @@ def version():
 
 	return v
 
+# creates a json scheme from an uploaded csv file.
 @app.route('/build', methods=['POST'])
 def build():
 	cattlelog.info("Received request to build schema")
@@ -177,7 +181,6 @@ def build():
 
 	delete_data() #delete old data if there is any
 	create_user_cookie()
-	# app.config['UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], session['user_location'])
 	cattlelog.debug("type of this session object: {}".format(type(session['user_location'])))
 	path = os.path.join(UPLOAD_FOLDER_BASE , str(session['user_location']))
 
@@ -205,23 +208,19 @@ def build():
 		with open(os.path.join(path, filename + '-metadata.json')) as json_file:
 			json_schema = json.loads(json_file.read())
 		create_json_loc_cookie(os.path.join(path, filename + '-metadata.json'))
-		# resp = make_response(jsonify(json_schema)) #no longer return the json (only to ruminator)
-		# return cattle()
-		# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE
-		cattlelog.debug("BASWNAME: {}".format(session['file_location']))
 		return render_template('decide_scheme.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
 	else:
 		cattlelog.error('No file supplied or wrong file type')
 		return resp, 415
 
-	# return resp, 200
-
-@app.route('/convert_local', methods=['POST', 'GET'])
-def convert_local():
+# starts the thread where the csv is converted into linked data with COW
+# and returns the download page to the user.
+@app.route('/convert', methods=['POST', 'GET'])
+def convert():
 	cattlelog.info("Received request to convert files locally")
 	# cattlelog.debug("Headers: {}".format(request.headers))
 
-	app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE #because otherwise it nests after it errors
+	app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_BASE #because otherwise it nests after cattle errors
 
 	filename_csv = os.path.basename(session['file_location'])[:-len('-metadata.json')]
 	filename_json = os.path.basename(session['file_location'])
@@ -230,7 +229,6 @@ def convert_local():
 	if os.path.exists(os.path.join(path, filename_csv)) and os.path.exists(os.path.join(path, filename_json)):
 		cattlelog.debug("Running COW convert")
 		cattlelog.debug("The size of the file is {} Bytes.".format(os.stat(os.path.join(path, filename_csv)).st_size))
-		# if os.stat(os.path.join(path, filename_csv)).st_size > (FILE_SIZE_THRESHOLD * 1024 * 1024):
 		create_thread(os.path.join(path, filename_csv), cattlelog)
 		path_list = path.split(os.sep)
 		cattlelog.debug("path_list: {}".format(path_list))
@@ -238,6 +236,10 @@ def convert_local():
 	else:
 		raise Exception('No files supplied, wrong file types, or unexpected file extensions')
 
+# if only a csv (no json) file is uploaded a new json scheme will
+# be created with the uploaded csv file, if both a csv and json
+# were uploaded cattle immediatly converts them into linked data
+# and returns the download page.
 @app.route('/build_convert', methods=['GET', 'POST'])
 def build_convert():
 	if 'json' not in request.files:
@@ -246,15 +248,10 @@ def build_convert():
 		cattlelog.debug("found a json!:")
 		cattlelog.debug(request.files['json'])
 		upload_files()
-		return convert_local()
+		return convert()
 
-# @app.route('/convert', methods=['GET', 'POST'])
-# def convert():
-# 	if 'file_location' in session:
-# 		return render_template('convert.html', currentFile=os.path.basename(session['file_location'])[:-len("-metadata.json")])
-# 	else:
-# 		return render_template('convert.html', currentFile="")
-
+# returns an instance of ruminator with the json file 
+# created using COW.
 @app.route('/ruminator', methods=['GET', 'POST'])
 def ruminator():
 	if 'file_location' in session:
@@ -264,6 +261,7 @@ def ruminator():
 	else:
 		return render_template('ruminator.html', json_contents={})
 
+# used by ruminator to save the changes made to the json scheme.
 @app.route('/save_json', methods=['POST'])
 def save_json():
 	jsdata = request.form['javascript_data']
@@ -273,6 +271,9 @@ def save_json():
 	resp = make_response()
 	return resp, 200
 
+# returns the page where the linked data can be downloaded when the 
+# conversion by COW is finished, before then it returns a page asking 
+# for the users patience.
 @app.route('/download/<combined_hash>')
 def download_page(combined_hash):
 	cattlelog.debug("this is the hash: {}".format(combined_hash))
@@ -289,6 +290,7 @@ def download_page(combined_hash):
 		cattlelog.debug("combined hash: {}".format(combined_hash))
 		return render_template('download_page.html', ready_for_download=False, hash=combined_hash, currentFile="")
 
+# returns the linked data in the user specified format to the user.
 @app.route('/download_/<combined_hash>', methods=['POST'])
 def download_linked_data(combined_hash):
 	cattlelog.debug("the hash: {}".format(combined_hash))
@@ -302,7 +304,6 @@ def download_linked_data(combined_hash):
 
 	rdf_file = rdf_file[0]
 	filename_csv = rdf_file[:-3]
-
 	try:
 		g = ConjunctiveGraph()
 		g.parse(location=os.path.join(file_location, rdf_file), format='nquads')
@@ -341,6 +342,7 @@ def download_json():
 		except Exception as e:
 			return render_template('error.html', error_message="Cattle was not able to find your json file. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS, currentFile="")
 
+# used to upload a new json scheme and replace the previously build json scheme.
 @app.route('/upload_json', methods=['GET', 'POST'])
 def upload_json(): #expects a session key is already available, and json already exists
 	cattlelog.info("Uploading json file...")
@@ -355,7 +357,7 @@ def upload_json(): #expects a session key is already available, and json already
 			json_file.save(filepath)
 
 			cattlelog.debug("new json uploaded successfully")
-		return convert_local()
+		return convert()
 	else:
 		cattlelog.debug("ERROR: could not find the new json file.")
 		return 0
@@ -373,12 +375,10 @@ def delete_data():
 		json_path = session['file_location']
 	except Exception as e:
 		return render_template('error.html', error_message="There does not seem to be any data to remove. Error Message: {}".format(e), error_mail_address=ERROR_MAIL_ADDRESS, currentFile="") 
-	csv_path = json_path[:-len("-metadata.json")]
-	rdf_path = csv_path + ".nq"
 
-	delete_file(csv_path)
-	delete_file(json_path)
-	delete_file(rdf_path)
+	delete_file(json_path[:-len("-metadata.json")]) #removes csv files
+	delete_file(json_path) #removes json file
+	delete_file(json_path[:-len("-metadata.json")] + ".nq") #removes nquats file
 
 	clean_session()
 
