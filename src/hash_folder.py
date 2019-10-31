@@ -34,7 +34,7 @@ def create_hash(csv_file, json_file, read_files=True, logger=None):
 # creates a new folder with create_hash()
 def make_hash_folder(path, csv_file, json_file=None):
 	hash_folder_name = create_hash(csv_file, json_file)
-	new_path = os.path.join(path, hash_folder_name)
+	new_path = os.path.join(path, "web_interface", hash_folder_name)
 	try:
 		os.makedirs(new_path)
 	except:
