@@ -19,13 +19,10 @@ case ${1} in
         cd ${CATTLE_INSTALL_DIR}
 
         ## Replace tokens in code
-        sed -i "s/xxx/${AUTH_TOKEN}/" src/cattle.py
         sed -i "s/xyxyxy/${ERROR_MAIL_ADDRESS}/" src/cattle.py
         sed -i "s/zzz/${SECRET_SESSION_KEY}/" src/cattle.py
-        sed -i "s/00001/${N_GUNICORN_WORKERS}/" src/gunicorn_config.py
 
-        gunicorn -c src/gunicorn_config.py src.cattle:app
-        # python src/cattle.py
+        python src/cattle.py
         # migrate_database
         # rm -rf /var/run/supervisor.sock
         # exec /usr/bin/supervisord -nc /etc/supervisor/supervisord.conf
@@ -44,7 +41,7 @@ case ${1} in
     ;;
   app:help)
     echo "Available options:"
-    echo " app:start        - Starts the grlc server (default)"
+    echo " app:start        - Starts the cattle server (default)"
     # echo " app:init         - Initialize the gitlab server (e.g. create databases, compile assets), but don't start it."
     # echo " app:sanitize     - Fix repository/builds directory permissions."
     # echo " app:rake <task>  - Execute a rake task."

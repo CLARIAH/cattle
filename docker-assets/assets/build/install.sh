@@ -19,6 +19,7 @@ passwd -d ${CATTLE_USER}
 cd ${CATTLE_INSTALL_DIR}
 chown ${CATTLE_USER}:${CATTLE_USER} ${CATTLE_HOME} -R
 
+pip install --upgrade pip
 sudo pip install cow_csvw --upgrade
 pip install -r src/requirements.txt
 
@@ -63,7 +64,7 @@ npm install @triply/client.js@1.0.12
 cd ${CATTLE_INSTALL_DIR}
 
  # configure gitlab log rotation
- cat > /etc/logrotate.d/grlc << EOF
+ cat > /etc/logrotate.d/cattle << EOF
  ${CATTLE_LOG_DIR}/cattle/*.log {
    weekly
    missingok

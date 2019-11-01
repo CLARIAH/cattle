@@ -10,7 +10,5 @@ services:
      - DEBUG=true
      - USERMAP_GID=1000
      - USERMAP_UID=1000
-     - AUTH_TOKEN=xxx
-     - MAILGUN_AUTH_TOKEN=yyy
+     - SECRET_SESSION_KEY=zzz
      - ERROR_MAIL_ADDRESS=xyxyxy
-     - N_GUNICORN_WORKERS=00001

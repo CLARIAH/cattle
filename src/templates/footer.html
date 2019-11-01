@@ -1,14 +1,21 @@
-          <div class="footer">
-          <p>(c) 2019 CLARIAH</p>
-          </div>
+					{% if currentFile == "" %}
+					{% else %}
+					<div align="right">
+						<a href="{{ url_for('delete_data') }}">
+							<img src="{{url_for('.static', filename='img/trash-bin.png')}}" title="Delete all your current data" style="width:5%;display:block; margin-bottom: 20px">
+						</a>
+					</div>
+					{% endif %}
+				</div>
+					<div class="footer">
+					<p>(c) 2019 CLARIAH</p>
+					</div>
+			</div>
 
-        </div>
-
-      </div>
-
-    </div>
+		</div>
 
 
 
-  </body>
+
+	</body>
 </html>

@@ -1,4 +1,4 @@
-FROM python:2.7.13
+FROM python:3.6.8
 MAINTAINER albert.merono@vu.nl
 
 ENV CATTLE_USER="cattle" \
@@ -12,10 +12,8 @@ ENV CATTLE_INSTALL_DIR="${CATTLE_HOME}/cattle" \
     CATTLE_BUILD_DIR="${CATTLE_CACHE_DIR}/build" \
     CATTLE_RUNTIME_DIR="${CATTLE_CACHE_DIR}/runtime"
 
-RUN printf "deb http://archive.debian.org/debian/ jessie main\ndeb-src http://archive.debian.org/debian/ jessie main\ndeb http://security.debian.org jessie/updates main\ndeb-src http://security.debian.org jessie/updates main" > /etc/apt/sources.list
-
 RUN apt-get update \
- && DEBIAN_FRONTEND=noninteractive apt-get install -y nginx git-core logrotate python python-pip locales gettext-base sudo curl \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y nginx git-core logrotate python-pip locales gettext-base sudo build-essential apt-utils \
  && update-locale LANG=C.UTF-8 LC_MESSAGES=POSIX \
  && locale-gen en_US.UTF-8 \
  && DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales \
