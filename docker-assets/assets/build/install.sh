@@ -54,7 +54,7 @@ sed -i \
 
 # Druid uploadFile
 curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
-sudo apt-get install -y nodejs build-essential
+sudo apt-get install -y nodejs build-essential npm
 
 sudo npm install -g npm
 mkdir uploadScripts

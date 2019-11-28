@@ -1,4 +1,4 @@
-FROM python:3.6.8
+FROM python:2.7.17
 MAINTAINER albert.merono@vu.nl
 
 ENV CATTLE_USER="cattle" \
