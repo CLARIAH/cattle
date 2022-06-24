@@ -1,4 +1,4 @@
-NOTICE: CATTLE used to be a service to run COW on a server. This service has been discontinued, to focus on the development of CoW itself. Please find CoW at https://github.com/clariah/cow/ or install via pip (```pip install cow_csvw```). 
+NOTICE: CATTLE used to be a service to run COW on a server. This service has been discontinued, to focus on the development of CoW itself. Please find CoW at https://github.com/clariah/cow/ or install via pip (```pip install cow-csvw```). 
 
 
 # cattle
